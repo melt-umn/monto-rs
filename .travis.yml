@@ -1,0 +1,16 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+  - osx
+
+script:
+  - cargo test --verbose --all
+  - cargo doc --all
+  - cargo build --release
+
+matrix:
+  fast_finish: true
