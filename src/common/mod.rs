@@ -1,3 +1,11 @@
+//! Common resources for brokers, clients, and services.
+
+pub mod broker;
+pub mod client;
+pub mod headers;
+pub mod products;
+pub mod service;
+
 use regex::Regex;
 use semver::Version;
 use serde_json::Value;

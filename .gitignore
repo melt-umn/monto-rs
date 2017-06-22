@@ -1,3 +1,9 @@
-/target/
+.*
+!.gitignore
+!.travis.yml
+
 **/*.rs.bk
-Cargo.lock
+
+/Cargo.lock
+/bindings/c/target/
+/target/

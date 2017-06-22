@@ -1,4 +1,6 @@
-use super::common::Identifier;
+//! Types useful for implementing a Monto Broker.
+
+use super::Identifier;
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct BrokerVersion {

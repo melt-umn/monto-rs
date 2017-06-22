@@ -1,6 +1,8 @@
+//! Types useful for implementing a Monto Service.
+
 use std::collections::BTreeSet;
+use super::{Identifier, MontoVersion, NamespacedName, Product, ProductIdentifier};
 use super::broker::BrokerVersion;
-use super::common::{Identifier, MontoVersion, NamespacedName, Product, ProductIdentifier};
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ServiceBrokerNegotiation {

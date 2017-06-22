@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate error_chain;
 extern crate futures;
+#[macro_use]
 extern crate hyper;
 extern crate itertools;
 #[macro_use]
@@ -21,4 +22,4 @@ extern crate tokio_core;
 pub mod client;
 pub mod broker;
 pub mod service;
-pub mod types;
+pub mod common;

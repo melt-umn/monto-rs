@@ -1,5 +1,8 @@
 //! An implementation of a Monto client.
 
+use common::{Identifier, MontoVersion};
+use common::client::{ClientBrokerNegotiation, ClientExtension, ClientNegotiation, ClientVersion};
+use common::service::ServiceNegotiation;
 use futures::{Async, Future, Poll};
 use hyper::Method::Post;
 use hyper::client::*;
@@ -7,10 +10,10 @@ use hyper::client::Client as HttpClient;
 use hyper::error::Error as HyperError;
 use hyper::error::UriError;
 use hyper::header::{ContentLength, ContentType};
+use hyper::{Body, StatusCode};
 use serde_json;
 use std::collections::BTreeSet;
 use tokio_core::reactor::Handle;
-use types::{ClientExtension, ClientNegotiation, ClientVersion, Identifier, MontoVersion, ServiceNegotiation};
 
 error_chain! {
     foreign_links {
@@ -18,8 +21,20 @@ error_chain! {
         Json(serde_json::Error);
         InvalidUri(UriError);
     }
+
+    errors {
+        BrokerError(sc: StatusCode, b: Body) {
+            description("error from broker")
+            display("error {} from broker: {:?}", sc, b)
+        }
+        Incompatible(v: ClientBrokerNegotiation) {
+            description("incompatible broker version")
+            display("incompatible broker version: {:?}", v)
+        }
+    }
 }
 
+/// The configuration for a Client.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
     /// The address to connect to. This should be the URI Authority.
@@ -50,8 +65,11 @@ impl Default for Config {
     }
 }
 
-#[derive(Clone)]
+/// A Monto Client. Communicates with a Broker using the protocol defined by
+/// [Section 4](https://melt-umn.github.io/monto-v3-draft/draft01/#4-the-client-protocol)
+/// of the specfication.
 pub struct Client {
+    broker: ClientBrokerNegotiation,
     config: Config,
     extensions: BTreeSet<ClientExtension>,
     http: HttpClient<HttpConnector>,
@@ -116,6 +134,7 @@ impl Client {
     }
 }
 
+/// A Future for a new Client. Returns an error if negotiation fails.
 pub struct NewClientFuture {
     client: Option<HttpClient<HttpConnector>>,
     res: Result<FutureResponse>,
