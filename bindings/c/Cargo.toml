@@ -1,11 +1,11 @@
 [package]
 authors = ["Nathaniel Ringo <remexre@gmail.com>"]
-name = "monto3-c"
+name = "monto-c"
 version = "0.1.0"
 
 [dependencies]
-monto3 = { path = "../.." }
+monto = { path = "../.." }
 
 [lib]
 crate-type = ["cdylib", "staticlib"]
-name = "monto3"
+name = "monto"

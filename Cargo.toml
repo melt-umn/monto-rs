@@ -1,14 +1,14 @@
 [package]
 authors = ["Nathaniel Ringo <remexre@gmail.com>"]
-name = "monto3"
+name = "monto"
 version = "0.1.0"
 
 [[bin]]
-name = "monto3-broker"
+name = "monto-broker"
 path = "src/bin/broker.rs"
 
 [[bin]]
-name = "monto3-get-products-for"
+name = "monto-get-products-for"
 path = "src/bin/get-products-for.rs"
 
 [dependencies]
@@ -18,6 +18,7 @@ futures = "0.1.14"
 hyper = "0.11.0"
 itertools = "0.6.0"
 lazy_static = "0.2.8"
+log = "0.3.8"
 regex = "0.2.2"
 semver = "0.7.0"
 serde = "1.0.8"

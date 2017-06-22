@@ -1,0 +1,247 @@
+//! The Messages common to both the Client and Service Protocols, as described in
+//! [Section 3.1](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-common-messages)
+//! of the specification.
+
+use semver::Version as SemverVersion;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::Value;
+use std::cmp::Ordering;
+use std::fmt::Result as FmtResult;
+use std::fmt::{Display, Formatter};
+
+/// A reverse-hostname-style dotted identifier, which must have at least two components.
+///
+/// Defined in
+/// [Section 3.1.1](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-1-identifier)
+/// of the specification.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Identifier {
+	namespace: Vec<String>,
+	name: String,
+}
+
+impl<'de> Deserialize<'de> for Identifier {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        unimplemented!()
+    }
+}
+
+impl Display for Identifier {
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+		for c in &self.namespace {
+			write!(fmt, "{}.", c)?;
+		}
+		write!(fmt, "{}", self.name)
+	}
+}
+
+impl Serialize for Identifier {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.to_string().serialize(s)
+    }
+}
+
+/// The programming language associated with a Product.
+#[derive(Clone, Deserialize, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all="snake_case", untagged)]
+pub enum Language {
+    /// A language not otherwise present in this enumeration.
+    Other(String),
+}
+
+impl Language {
+    /// The name of the language, as a string.
+    fn name(&self) -> &str {
+        match *self {
+            Language::Other(ref name) => name,
+        }
+    }
+}
+
+impl Display for Language {
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        write!(fmt, "{}", self.name())
+	}
+}
+
+/// A name after a dotted identifier.
+///
+/// Defined in
+/// [Section 3.1.2](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-2-namespacedname)
+/// of the specification.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct NamespacedName {
+    namespace: Identifier,
+    name: String,
+}
+
+impl<'de> Deserialize<'de> for NamespacedName {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        unimplemented!()
+    }
+}
+
+impl Display for NamespacedName {
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+		write!(fmt, "{}/{}", self.namespace, self.name)
+	}
+}
+
+impl Serialize for NamespacedName {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.to_string().serialize(s)
+    }
+}
+
+/// A Product, along with its contents.
+///
+/// Defined in
+/// [Section 3.1.3](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-3-product)
+/// of the specification.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Product {
+    /// The name of the Product.
+    pub name: ProductName,
+
+    /// The language of the Product.
+    pub language: Language,
+
+    /// The path of the Product.
+    pub path: String,
+
+    /// The contents of the Product.
+    pub contents: Value,
+}
+
+/// A Product's name and language.
+///
+/// Defined in
+/// [Section 3.1.4](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-4-productidentifier)
+/// of the specification.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProductIdentifier {
+    /// The name of the Product.
+    pub name: ProductName,
+
+    /// The language of the Product.
+    pub language: Language,
+}
+
+/// The name of a Product.
+///
+/// Defined in
+/// [Section 3.1.5](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-5-productname)
+/// of the specification.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all="snake_case", untagged)]
+pub enum ProductName {
+    // TODO built-in product types
+
+    /// A vendor-specific product.
+    Other(Identifier),
+}
+
+impl Display for ProductName {
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        match *self {
+            ProductName::Other(ref ident) => ident.fmt(fmt),
+        }
+	}
+}
+
+/// The version number of the Client or Server Protocol.
+///
+/// Defined in
+/// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-6-protocolversion)
+/// of the specification.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, Serialize)]
+pub struct ProtocolVersion {
+    /// The major version number.
+    pub major: u64,
+
+    /// The minor version number.
+    pub minor: u64,
+
+    /// The patch version number.
+    pub patch: u64,
+}
+
+impl Display for ProtocolVersion {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        write!(fmt, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+impl From<ProtocolVersion> for SemverVersion {
+    fn from(v: ProtocolVersion) -> SemverVersion {
+        SemverVersion {
+            major: v.major,
+            minor: v.minor,
+            patch: v.patch,
+            build: Vec::new(),
+            pre: Vec::new(),
+        }
+    }
+}
+
+impl PartialOrd for ProtocolVersion {
+    fn partial_cmp(&self, other: &ProtocolVersion) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// The version and implementation of a Client, Broker, or Service.
+///
+/// Defined in
+/// [Section 3.1.7](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-7-softwareversion)
+/// of the specification.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct SoftwareVersion {
+    /// The identifier of the Client, Broker, or Service.
+    pub id: Identifier,
+
+    /// The human-readable name of the Client, Broker, or Service.
+    #[serde(default)]
+    pub name: Option<String>,
+
+    /// The human-readable name of the vendor of the Client, Broker, or Service.
+    #[serde(default)]
+    pub vendor: Option<String>,
+
+    /// The major version number.
+    #[serde(default)]
+    pub major: u64,
+
+    /// The minor version number.
+    #[serde(default)]
+    pub minor: u64,
+
+    /// The patch version number.
+    #[serde(default)]
+    pub patch: u64,
+}
+
+impl Display for SoftwareVersion {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        write!(fmt, "{}", self.id)?;
+        match (&self.name, &self.vendor) {
+            (&Some(ref name), &Some(ref vendor)) => write!(fmt, " ({} by {})", name, vendor)?,
+            (&Some(ref name), &None) => write!(fmt, " ({})", name)?,
+            (&None, &Some(ref vendor)) => write!(fmt, " by {}", vendor)?,
+            (&None, &None) => {},
+        }
+        write!(fmt, " {}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+impl From<SoftwareVersion> for SemverVersion {
+    fn from(v: SoftwareVersion) -> SemverVersion {
+        SemverVersion {
+            major: v.major,
+            minor: v.minor,
+            patch: v.patch,
+            build: Vec::new(),
+            pre: Vec::new(),
+        }
+    }
+}
