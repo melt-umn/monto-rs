@@ -2,12 +2,14 @@
 //! [Section 3.1](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-common-messages)
 //! of the specification.
 
+use regex::Regex;
 use semver::Version as SemverVersion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
 ///
@@ -33,6 +35,26 @@ impl Display for Identifier {
 		}
 		write!(fmt, "{}", self.name)
 	}
+}
+
+impl FromStr for Identifier {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new("[a-zA-Z_][a-zA-Z_0-9]*(\\.[a-zA-Z_][a-zA-Z_0-9]*)+").unwrap();
+        }
+        if RE.is_match(s) {
+            let mut parts = s.split('.').map(str::to_owned).collect::<Vec<_>>();
+            let name = parts.pop().unwrap().to_owned();
+            Ok(Identifier {
+                namespace: parts,
+                name: name,
+            })
+        } else {
+            Err(())
+        }
+    }
 }
 
 impl Serialize for Identifier {
@@ -99,18 +121,15 @@ impl Serialize for NamespacedName {
 /// [Section 3.1.3](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-3-product)
 /// of the specification.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Product {
-    /// The name of the Product.
-    pub name: ProductName,
+pub struct Product<P: ProductValue> {
+    /// The value of the Product.
+    pub value: P,
 
     /// The language of the Product.
     pub language: Language,
 
     /// The path of the Product.
     pub path: String,
-
-    /// The contents of the Product.
-    pub contents: Value,
 }
 
 /// A Product's name and language.
@@ -125,6 +144,9 @@ pub struct ProductIdentifier {
 
     /// The language of the Product.
     pub language: Language,
+
+    /// The path of the Product.
+    pub path: String,
 }
 
 /// The name of a Product.
@@ -135,6 +157,12 @@ pub struct ProductIdentifier {
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum ProductName {
+    /// A listing of a directory.
+    Directory,
+
+    /// Source code.
+    Source,
+
     // TODO built-in product types
 
     /// A vendor-specific product.
@@ -144,9 +172,17 @@ pub enum ProductName {
 impl Display for ProductName {
 	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
+            ProductName::Directory => write!(fmt, "directory"),
+            ProductName::Source => write!(fmt, "source"),
             ProductName::Other(ref ident) => ident.fmt(fmt),
         }
 	}
+}
+
+/// A Product's value.
+pub trait ProductValue: for<'de> Deserialize<'de> + Serialize + Sized {
+    /// Returns the name of the Product.
+    fn name() -> ProductName;
 }
 
 /// The version number of the Client or Server Protocol.
@@ -154,7 +190,7 @@ impl Display for ProductName {
 /// Defined in
 /// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-6-protocolversion)
 /// of the specification.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ProtocolVersion {
     /// The major version number.
     pub major: u64,
@@ -164,6 +200,15 @@ pub struct ProtocolVersion {
 
     /// The patch version number.
     pub patch: u64,
+}
+
+impl ProtocolVersion {
+    /// Creates a new ProtocolVersion.
+    pub fn new(major: u64, minor: u64, patch: u64) -> ProtocolVersion {
+        ProtocolVersion {
+            major, minor, patch,
+        }
+    }
 }
 
 impl Display for ProtocolVersion {
@@ -181,6 +226,14 @@ impl From<ProtocolVersion> for SemverVersion {
             build: Vec::new(),
             pre: Vec::new(),
         }
+    }
+}
+
+impl Ord for ProtocolVersion {
+    fn cmp(&self, other: &ProtocolVersion) -> Ordering {
+        let l: SemverVersion = self.clone().into();
+        let r: SemverVersion = other.clone().into();
+        l.cmp(&r)
     }
 }
 
