@@ -3,7 +3,5 @@
 !.travis.yml
 
 **/*.rs.bk
-
-/Cargo.lock
-/bindings/c/target/
-/target/
+Cargo.lock
+target/

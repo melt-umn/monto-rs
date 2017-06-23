@@ -2,13 +2,6 @@
 authors = ["Nathaniel Ringo <remexre@gmail.com>"]
 name = "monto"
 version = "0.1.0"
-[[bin]]
-name = "monto-broker"
-path = "src/bin/broker.rs"
-
-[[bin]]
-name = "monto-get-products-for"
-path = "src/bin/get-products-for.rs"
 
 [dependencies]
 clap = "2.25.0"
@@ -28,4 +21,4 @@ url = "1.5.0"
 void = "*"
 
 [workspace]
-members = [".", "bindings/c"]
+members = [".", "bindings/c", "broker"]

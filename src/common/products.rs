@@ -2,10 +2,8 @@
 //! [Section 6](https://melt-umn.github.io/monto-v3-draft/draft02/#6-products)
 //! of the Monto specification.
 
-use common::messages::{Identifier, ProductName, ProductValue};
-use serde_json::{from_value, to_value, Value};
-use std::fs::{DirEntry, FileType};
-use std::io::Error as IoError;
+use common::messages::{ProductName, ProductValue};
+use std::fs::FileType;
 use std::path::PathBuf;
 
 /// A listing of a directory.

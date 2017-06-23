@@ -6,11 +6,9 @@
 
 // #[macro_use]
 // extern crate clap;
-extern crate futures;
 extern crate monto;
 extern crate tokio_core;
 
-use futures::Future;
 use monto::client::{Client, Config};
 use tokio_core::reactor::Core;
 

@@ -1,0 +1,10 @@
+[package]
+authors = ["Nathaniel Ringo <remexre@gmail.com>"]
+name = "monto-broker"
+version = "0.1.0"
+[dependencies]
+futures = "*"
+hyper = "*"
+
+[dependencies.monto]
+path = ".."

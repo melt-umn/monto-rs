@@ -8,7 +8,7 @@ pub mod messages;
 use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
 use futures::{Async, Future, Poll};
 use hyper;
-use hyper::{Get, Post, Put, Request, Uri};
+use hyper::{Get, Post, Put, Request, StatusCode, Uri};
 use hyper::client::FutureResponse;
 use hyper::header::{ContentLength, ContentType};
 use self::messages::{BrokerGetError, BrokerPutError, ClientBrokerNegotiation, ClientNegotiation};
@@ -143,14 +143,32 @@ pub struct NewFuture(Url, HttpClient, FutureResponse);
 
 impl Future for NewFuture {
     type Item = Client;
-    type Error = hyper::Error;
+    type Error = NewFutureError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match self.2.poll() {
-            Ok(Async::Ready(res)) => unimplemented!(),
+            Ok(Async::Ready(res)) => match res.status() {
+                StatusCode::Ok => unimplemented!(),
+                code => Err(NewFutureErrorKind::BadStatus(code).into()),
+            },
             Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(err) => Err(err),
+            Err(err) => Err(err.into()),
         }
+    }
+}
+
+error_chain! {
+    types {
+        NewFutureError, NewFutureErrorKind, NewFutureResultExt;
+    }
+    foreign_links {
+        Hyper(hyper::Error)
+            #[doc = "An error from the network."];
+    }
+    errors {
+        /// A status other than Ok was received from the Broker, indicating
+        /// that the Client is not compatible.
+        BadStatus(code: StatusCode) 
     }
 }
 
