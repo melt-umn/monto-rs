@@ -10,7 +10,7 @@ use std::collections::BTreeSet;
 /// Defined in
 /// [Section 5.4.2](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-2-servicenegotiation)
 /// of the specification.
-#[derive(Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ServiceNegotiation {
     /// The version of the Service Protocol the Service supports.
     pub monto: ProtocolVersion,
@@ -27,7 +27,7 @@ pub struct ServiceNegotiation {
 }
 
 /// An extension to the Service Protocol.
-#[derive(Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum ServiceExtension {
     /// An unknown and unsupported extension.

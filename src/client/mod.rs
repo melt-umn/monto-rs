@@ -4,6 +4,9 @@
 //! of the specification.
 
 pub mod messages;
+mod negotiation;
+
+pub use self::negotiation::{NewFuture, NewFutureError, NewFutureErrorKind};
 
 use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
 use futures::{Async, Future, Poll};
@@ -24,7 +27,7 @@ type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 /// A Monto Client.
 pub struct Client {
     base_url: Url,
-    client: HttpClient,
+    http: HttpClient,
     services: BTreeMap<Identifier, BTreeSet<ProductIdentifier>>,
 }
 
@@ -38,7 +41,7 @@ impl Client {
         let url = match service {
             Some(service) => self.base_url.join(&service.to_string()),
             None => self.base_url.join("broker"),
-        }.expect("");
+        }.expect("TODO");
         unimplemented!()
     }
 
@@ -70,9 +73,9 @@ impl Client {
         req.headers_mut().set(ContentLength(body.len() as u64));
         req.set_body(body);
 
-        let client = HttpClient::new(&handle);
-        let future = client.request(req);
-        Ok(NewFuture(base_url, client, future))
+        let http = HttpClient::new(&handle);
+        let future = http.request(req);
+        Ok(NewFuture::new(base_url, http, future))
     }
 
     /// Attempts to retrieve a Product from the Broker, as described in
@@ -80,7 +83,7 @@ impl Client {
     /// of the specification.
     pub fn request<P: ProductValue>(&mut self, service: &Identifier, p: &ProductIdentifier) -> RequestFuture<P> {
         let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &p.path));
-        RequestFuture::new(self.client.request(req))
+        RequestFuture::new(self.http.request(req))
     }
 
     /// Returns an iterator over the Products that can be requested by the Client.
@@ -134,41 +137,6 @@ impl Default for Config {
                 patch: 0,
             },
         }
-    }
-}
-
-/// A Future for a Client negotiating version information and establishing a
-/// connection to the Broker.
-pub struct NewFuture(Url, HttpClient, FutureResponse);
-
-impl Future for NewFuture {
-    type Item = Client;
-    type Error = NewFutureError;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        match self.2.poll() {
-            Ok(Async::Ready(res)) => match res.status() {
-                StatusCode::Ok => unimplemented!(),
-                code => Err(NewFutureErrorKind::BadStatus(code).into()),
-            },
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(err) => Err(err.into()),
-        }
-    }
-}
-
-error_chain! {
-    types {
-        NewFutureError, NewFutureErrorKind, NewFutureResultExt;
-    }
-    foreign_links {
-        Hyper(hyper::Error)
-            #[doc = "An error from the network."];
-    }
-    errors {
-        /// A status other than Ok was received from the Broker, indicating
-        /// that the Client is not compatible.
-        BadStatus(code: StatusCode) 
     }
 }
 

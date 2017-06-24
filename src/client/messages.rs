@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 /// Defined in
 /// [Section 4.5.1](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-1-clientnegotiation)
 /// of the specification.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ClientNegotiation {
     /// The version of the Client Protocol the Client supports.
     pub monto: ProtocolVersion,
@@ -29,13 +29,13 @@ pub struct ClientNegotiation {
 /// Defined in
 /// [Section 4.5.2](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-2-clientbrokernegotiation)
 /// of the specification.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ClientBrokerNegotiation {
     /// The version of the Client Protocol the Broker supports.
     pub monto: ProtocolVersion,
 
     /// The version information of the Broker.
-    pub client: SoftwareVersion,
+    pub broker: SoftwareVersion,
 
     /// The extensions that are supported by the Broker.
     #[serde(default, skip_serializing_if="BTreeSet::is_empty")]
@@ -46,7 +46,7 @@ pub struct ClientBrokerNegotiation {
 }
 
 /// An extension to the Client Protocol.
-#[derive(Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum ClientExtension {
     /// An unknown and unsupported extension.
@@ -58,7 +58,7 @@ pub enum ClientExtension {
 /// Defined in
 /// [Section 4.5.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-3-brokerputerror)
 /// of the specification.
-#[derive(Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]
 pub enum BrokerPutError {
     /// A language was not provided, and it could not be detected by the Broker.
@@ -70,7 +70,7 @@ pub enum BrokerPutError {
 /// Defined in
 /// [Section 4.5.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-4-brokergeterror)
 /// of the specification.
-#[derive(Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]
 pub enum BrokerGetError {
     /// A Product was requested from a nonexistent Service.
