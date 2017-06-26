@@ -6,11 +6,24 @@ rust:
 os:
   - linux
   - osx
-
-script:
-  - cargo build --all
-  - cargo build --all --release
-  - cargo test --all --verbose
-
 matrix:
   fast_finish: true
+
+script:
+  - cargo build
+  - cargo test
+
+before_deploy:
+  - cargo build --release
+  - mkdir staging
+  - TODO
+deploy:
+  provider: releases
+  file: monto-rs-$(TARGET)-$(TRAVIS_TAG).tar.gz
+  on:
+    tags: true
+    condition: $(TRAVIS_RUST_VERSION) = stable
+  description: $(TRAVIS_TAG) release
+  api_key:
+    secure: "vvbNSmMFScrBRNkDhTSwLkqV0AcRPb2QJHLpSU7zyrlCPJBfjQrmqeEP9GjW2tqBPZiUIQmKlJT4HNDClZGLht1roj3gxhxz/aSOvjUKZpTF5myf11I5qUU8P7G01mbEIP62qft7Hj2xGx6uyfX5pHOmw+h0Pb3bXYkmtrjATAIgPq5wkNlxE+OhR6g7/upF7CRqzNudfp93tSWHfh98n6Ic7ooysqxgWvNHZruo3De0zrlpcbI++x3qJ5eUtpbKSuw/faBQos0rqwO4NII/RCuNBk+UbmA5BZytb30sO40VHaDFEOgXA2K5h9EhUoJaPdsWEfL2euZmVFF+fxrV6c63jr6MiZcS9PgjtcjO9WEwDLM8wbqAjBXppqLUI0GE/4H+Nilv/HMNvlCexNgj5c5050jWTkJNtRS7wg9XrK/Lr9czv0EiBwCm3cIbpExsjJQNL3Oe39o3ifmwTWaRMR6LvXbsVvEwDHoDjUw0xN8FwHpBhXrsVGCDgxiPp/I0/nKtnwFp/0lvROBUvB6bhSVAzEAHTJ8e/thuwJs4nCQ3w+HNvZzteNsVRUjCfmworr8da4+muVMvVHQBGFzq3PI/DmJjjX1jez1xA/EytGJvflUnQrQ001vzEkKiS04AGMkUjf0VF1tW+wIHLqQXWr/ljzTEcE2oWjeuuERaIj0="
+  skip_cleanup: true

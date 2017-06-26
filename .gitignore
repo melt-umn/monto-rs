@@ -4,4 +4,5 @@
 
 **/*.rs.bk
 Cargo.lock
+staging/
 target/

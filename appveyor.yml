@@ -1,3 +1,7 @@
+branches:
+  only:
+    - master
+    - /^v\d+\.\d+\.\d+.*$/
 environment:
   matrix:
   - TARGET: i686-pc-windows-gnu
@@ -24,6 +28,8 @@ environment:
     RUST_VERSION: beta
   - TARGET: x86_64-pc-windows-nightly
     RUST_VERSION: nightly
+matrix:
+  fast_finish: true
 
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
@@ -31,11 +37,20 @@ install:
   - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
 
 build_script:
-  - cargo build --all
-  - cargo build --all --release
+  - cargo build
 
 test_script:
-  - cargo test --all
+  - cargo test
 
-matrix:
-  fast_finish: true
+before_deploy:
+  - cargo build --release
+  - mkdir staging
+  - TODO
+deploy:
+  - provider: GitHub
+    artifact: monto-rs-$(TARGET)-$(APPVEYOR_REPO_TAG_NAME).zip
+    on:
+      appveyor_repo_tag: true
+    description: $(APPVEYOR_REPO_TAG_NAME) release
+    auth_token:
+      secure: SockYqLSroVMPUR6nq6Eom/pZ5t04SmO/zP4S0yyo2WdthcXVDUmv+4ZYQDuYo9H
