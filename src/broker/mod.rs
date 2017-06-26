@@ -1,29 +1,13 @@
-//! A crate that implements a Broker for the Monto Protocol.
-
-#![deny(missing_docs)]
-
-extern crate either;
-extern crate dirs;
-extern crate futures;
-extern crate hyper;
-#[macro_use]
-extern crate log;
-extern crate monto;
-#[macro_use]
-extern crate serde_derive;
-extern crate tokio_core;
-extern crate toml;
-extern crate url;
-extern crate void;
+//! An implementation of a Monto Broker.
 
 pub mod client;
 pub mod config;
 pub mod service;
 
-use config::Config;
 use futures::{Async, Future, Poll};
 use futures::future::{JoinAll, join_all};
-use service::{NewServiceFuture, Service};
+use self::config::Config;
+use self::service::{NewServiceFuture, Service};
 use tokio_core::reactor::Handle;
 
 /// The Broker.

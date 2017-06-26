@@ -3,6 +3,8 @@
 
 #![deny(missing_docs)]
 
+extern crate dirs;
+extern crate either;
 #[macro_use]
 extern crate error_chain;
 extern crate futures;
@@ -20,8 +22,11 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio_core;
+extern crate toml;
 extern crate url;
+extern crate void;
 
+pub mod broker;
 pub mod client;
 pub mod service;
 pub mod common;

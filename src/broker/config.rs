@@ -1,78 +1,11 @@
 //! The configuration for the Broker.
 
-use monto::client::messages::ClientExtension;
-use monto::common::messages::{Identifier, SoftwareVersion};
-use monto::service::messages::ServiceExtension;
+use client::messages::ClientExtension;
+use common::messages::{Identifier, SoftwareVersion};
+use service::messages::ServiceExtension;
 use std::collections::BTreeSet;
 use std::net::SocketAddr;
 use url::Url;
-
-/// Loads the configuration.
-///
-/// The following directories are searched (in order) for a file called `monto-broker.toml`:
-///  
-///  - `.`
-///  - Config home (`AppData\Roaming\monto-broker` / `~/Library/monto-broker` / `~/.config/monto-broker`)
-///  - The home directory
-///
-/// If one cannot be found, the next is used instead. If none can be found, the default
-/// configuration is used.
-///
-/// Note that the default configuration does not connect to any services. As
-/// such, a warning will be emitted if it is used.
-pub fn load_config() -> Config {
-    use dirs::Directories;
-    use std::env::home_dir;
-    use std::path::Path;
-
-    fn load_one<P: AsRef<Path>>(dir: P) -> Option<Config> {
-        use std::fs::File;
-        use std::io::{ErrorKind, Read};
-        use toml::from_slice;
-
-        // Build the path.
-        let path = dir.as_ref().join("monto-broker.toml");
-
-        // Open the file.
-        let mut f = match File::open(&path) {
-            Ok(f) => f,
-            Err(err) => {
-                if err.kind() != ErrorKind::NotFound {
-                    error!("Error opening config file `{}': {}", path.display(), err);
-                }
-                return None;
-            },
-        };
-
-        // Create a buffer to store the file, and read the file into it.
-        let mut buf = Vec::new();
-        if let Err(err) = f.read_to_end(&mut buf) {
-            error!("Error reading config file `{}': {}", path.display(), err);
-            return None;
-        }
-
-        // Convert the file's contents to the Config type and return.
-        match from_slice(&buf) {
-            Ok(config) => Some(config),
-            Err(err) => {
-                error!("Error parsing config file `{}': {}", path.display(), err);
-                None
-            },
-        }
-    }
-
-    load_one(".").or_else(|| {
-        Directories::with_prefix("monto-broker", "monto-broker")
-            .ok()
-            .map(|dirs| dirs.config_home())
-            .and_then(load_one)
-    }).or_else(|| {
-        home_dir().and_then(load_one)
-    }).unwrap_or_else(|| {
-        warn!("Could not open any configuration, using the default.");
-        Config::default() 
-    })
-}
 
 /// The Broker's configuration.
 ///
@@ -108,6 +41,75 @@ pub struct Config {
 
     /// Configuration on how the Broker should report its version and implementation.
     pub version: VersionConfig,
+}
+
+impl Config {
+    /// Loads the configuration.
+    ///
+    /// The following directories are searched (in order) for a file called `monto-broker.toml`:
+    ///  
+    ///  - `.`
+    ///  - Config home (`AppData\Roaming\monto-broker` / `~/Library/monto-broker` / `~/.config/monto-broker`)
+    ///  - The home directory
+    ///
+    /// If one cannot be found, the next is used instead. If none can be found, the default
+    /// configuration is used.
+    ///
+    /// Note that the default configuration does not connect to any services. As
+    /// such, a warning will be emitted if it is used.
+    pub fn load() -> Config {
+        use dirs::Directories;
+        use std::env::home_dir;
+        use std::path::Path;
+    
+        fn load_one<P: AsRef<Path>>(dir: P) -> Option<Config> {
+            use std::fs::File;
+            use std::io::{ErrorKind, Read};
+            use toml::from_slice;
+    
+            // Build the path.
+            let path = dir.as_ref().join("monto-broker.toml");
+    
+            // Open the file.
+            let mut f = match File::open(&path) {
+                Ok(f) => f,
+                Err(err) => {
+                    if err.kind() != ErrorKind::NotFound {
+                        error!("Error opening config file `{}': {}", path.display(), err);
+                    }
+                    return None;
+                },
+            };
+    
+            // Create a buffer to store the file, and read the file into it.
+            let mut buf = Vec::new();
+            if let Err(err) = f.read_to_end(&mut buf) {
+                error!("Error reading config file `{}': {}", path.display(), err);
+                return None;
+            }
+    
+            // Convert the file's contents to the Config type and return.
+            match from_slice(&buf) {
+                Ok(config) => Some(config),
+                Err(err) => {
+                    error!("Error parsing config file `{}': {}", path.display(), err);
+                    None
+                },
+            }
+        }
+    
+        load_one(".").or_else(|| {
+            Directories::with_prefix("monto-broker", "monto-broker")
+                .ok()
+                .map(|dirs| dirs.config_home())
+                .and_then(load_one)
+        }).or_else(|| {
+            home_dir().and_then(load_one)
+        }).unwrap_or_else(|| {
+            warn!("Could not open any configuration, using the default.");
+            Config::default() 
+        })
+    }
 }
 
 /// The configuration for implementation-specific behavior.
@@ -168,7 +170,7 @@ impl Default for NetConfig {
     fn default() -> NetConfig {
         use std::net::{Ipv6Addr, SocketAddrV6};
 
-        let ipv6addr = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+        let ipv6addr = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
         let sockaddrv6 = SocketAddrV6::new(ipv6addr, 28888, 0, 0);
         let addr = SocketAddr::V6(sockaddrv6);
         NetConfig { addr }

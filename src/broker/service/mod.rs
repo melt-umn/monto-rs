@@ -1,11 +1,11 @@
 //! The Service Protocol side of the Broker.
 
-use config::ServiceConfig;
+use broker::config::ServiceConfig;
+use common::messages::ProtocolVersion;
 use futures::{Async, Future, Poll};
 use hyper;
+use service::messages::{ServiceExtension, ServiceNegotiation};
 use std::collections::BTreeSet;
-use monto::common::messages::ProtocolVersion;
-use monto::service::messages::{ServiceExtension, ServiceNegotiation};
 use tokio_core::reactor::Handle;
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
