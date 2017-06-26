@@ -16,17 +16,17 @@ environment:
     RUST_VERSION: beta
   - TARGET: x86_64-pc-windows-gnu
     RUST_VERSION: nightly
-  - TARGET: i686-pc-windows-nightly
+  - TARGET: i686-pc-windows-msvc
     RUST_VERSION: stable
-  - TARGET: i686-pc-windows-nightly
+  - TARGET: i686-pc-windows-msvc
     RUST_VERSION: beta
-  - TARGET: i686-pc-windows-nightly
+  - TARGET: i686-pc-windows-msvc
     RUST_VERSION: nightly
-  - TARGET: x86_64-pc-windows-nightly
+  - TARGET: x86_64-pc-windows-msvc
     RUST_VERSION: stable
-  - TARGET: x86_64-pc-windows-nightly
+  - TARGET: x86_64-pc-windows-msvc
     RUST_VERSION: beta
-  - TARGET: x86_64-pc-windows-nightly
+  - TARGET: x86_64-pc-windows-msvc
     RUST_VERSION: nightly
 matrix:
   fast_finish: true
