@@ -8,9 +8,9 @@ os:
   - osx
 
 script:
-  - cargo test --verbose --all
-  - cargo doc --all
-  - cargo build --release
+  - cargo build --all
+  - cargo build --all --release
+  - cargo test --all --verbose
 
 matrix:
   fast_finish: true

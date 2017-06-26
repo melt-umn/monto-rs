@@ -3,18 +3,17 @@
 use broker::Broker;
 use client::messages::ClientBrokerNegotiation;
 use common::messages::ProtocolVersion;
-use either::{Either, Left, Right};
+use futures::{Async, Future, Poll, Stream};
 use futures::future::{Empty, empty};
-use futures::{Async, Future, Poll};
+use hyper::{Body, Request, Response};
 use hyper::Error as HyperError;
 use hyper::server::{Http, Service};
-use hyper::{Body, Request, Response};
 use std::cell::RefCell;
-use std::net::TcpListener;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use tokio_core::net::TcpStream;
-use void::{Void, unreachable};
+use tokio_core::net::{Incoming, TcpListener, TcpStream};
+use tokio_core::reactor::Handle;
+use void::Void;
 
 impl Broker {
     /// Returns the ClientBrokerNegotiation that the Broker returns to Clients.
@@ -31,20 +30,25 @@ impl Broker {
         }
     }
 
-    /// Serves clients forever.
-    pub fn run_forever(self) -> ! {
-        let listener = TcpListener::bind(&self.config.net.addr)
-            .expect("TODO proper error handling");
+    /// Returns a Future that will resolve once the given Future resolves,
+    /// serving clients until then.
+    pub fn serve_until<F: Future>(self, stop: F) -> ServeFuture<F> {
+        let listener = TcpListener::bind(&self.config.net.addr, &self.handle)
+            .expect("TODO proper error handling")
+            .incoming();
         let handle = self.handle.clone();
         let broker = Rc::new(RefCell::new(self));
-        loop {
-            let (stream, remote) = listener.accept()
-                .expect("TODO proper error handling");
-            let stream = TcpStream::from_stream(stream, &handle)
-                .expect("TODO proper error handling");
-            let service = Client(broker.clone());
-            Http::new().bind_connection(&handle, stream, remote, service);
+        ServeFuture {
+            broker,
+            handle,
+            listener,
+            stop,
         }
+    }
+
+    /// Returns a Future that will never resolve, but will serves clients forever.
+    pub fn serve_forever(self) -> ServeFuture<Empty<Void, Void>> {
+        self.serve_until(empty())
     }
 }
 
@@ -57,6 +61,43 @@ impl Service for Client {
     type Future = Box<Future<Item=Response<Body>, Error=HyperError>>;
 
     fn call(&self, req: Request) -> Self::Future {
+        info!("Got request {:?}", req);
         unimplemented!()
+    }
+}
+
+/// A Future for the Broker serving to Clients.
+pub struct ServeFuture<F: Future> {
+    broker: Rc<RefCell<Broker>>,
+    handle: Handle,
+    listener: Incoming,
+    stop: F,
+}
+
+impl<F: Future> Future for ServeFuture<F> {
+    type Item = F::Item;
+    type Error = F::Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        match self.stop.poll() {
+            Ok(Async::NotReady) => match self.listener.poll() {
+                Ok(Async::Ready(Some((stream, remote)))) => {
+                    info!("Got client connection from {}", remote);
+                    let service = Client(self.broker.clone());
+                    Http::new().bind_connection(&self.handle, stream, remote, service);
+                    Ok(Async::NotReady)
+                },
+                Ok(Async::Ready(None)) => {
+                    error!("TcpListener.incoming() stream ended! (This is documented to be impossible)");
+                    unreachable!();
+                },
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Err(err) => {
+                    error!("{}", err);
+                    panic!("TODO proper error handling: {}", err);
+                },
+            },
+            poll => poll,
+        }
     }
 }

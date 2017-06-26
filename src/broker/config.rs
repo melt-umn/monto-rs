@@ -162,7 +162,9 @@ pub struct ExtensionConfig {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct NetConfig {
-    /// The address to serve on. Defaults to `[::]:28888`.
+    /// The address to serve on.
+    ///
+    /// Defaults to `[::]:28888` (listening on all interfaces on both IPv4 and IPv6 on port 28888).
     pub addr: SocketAddr,
 }
 
