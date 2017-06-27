@@ -54,3 +54,9 @@ deploy:
     description: $(APPVEYOR_REPO_TAG_NAME) release
     auth_token:
       secure: SockYqLSroVMPUR6nq6Eom/pZ5t04SmO/zP4S0yyo2WdthcXVDUmv+4ZYQDuYo9H
+
+notifications:
+  - provider: Slack
+    incoming_webhook:
+      secure: 2O5L6uELJI4Rqu0UKp3TKTjGJXfkGSssHX69J6W1GWdXIwYNbDLtghii439APHqnWL/URd/F9GJ7DcsCIe2ih44IStAGy89ChshDtRV605U=
+    channel: '#monto'
