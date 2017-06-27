@@ -27,5 +27,5 @@ extern crate void;
 
 pub mod broker;
 pub mod client;
-pub mod service;
 pub mod common;
+pub mod service;

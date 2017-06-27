@@ -5,7 +5,6 @@
 use regex::Regex;
 use semver::Version as SemverVersion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::Value;
 use std::cmp::Ordering;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
@@ -23,7 +22,7 @@ pub struct Identifier {
 }
 
 impl<'de> Deserialize<'de> for Identifier {
-    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+    fn deserialize<D: Deserializer<'de>>(_d: D) -> Result<Self, D::Error> {
         unimplemented!()
     }
 }
@@ -98,7 +97,7 @@ pub struct NamespacedName {
 }
 
 impl<'de> Deserialize<'de> for NamespacedName {
-    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+    fn deserialize<D: Deserializer<'de>>(_d: D) -> Result<Self, D::Error> {
         unimplemented!()
     }
 }

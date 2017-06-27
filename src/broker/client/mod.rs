@@ -1,13 +1,17 @@
 //! The Client Protocol side of the Broker.
 
+mod negotiation;
+
 use broker::Broker;
 use client::messages::ClientBrokerNegotiation;
 use common::messages::ProtocolVersion;
 use futures::{Async, Future, Poll, Stream};
-use futures::future::{Empty, empty};
-use hyper::{Body, Request, Response};
+use futures::future::{Empty, empty, ok};
+use hyper::{Body, Method, Request, Response, StatusCode};
 use hyper::Error as HyperError;
+use hyper::header::{ContentLength, ContentType};
 use hyper::server::{Http, Service};
+use serde_json;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
@@ -16,20 +20,6 @@ use tokio_core::reactor::Handle;
 use void::Void;
 
 impl Broker {
-    /// Returns the ClientBrokerNegotiation that the Broker returns to Clients.
-    pub fn client_negotiation(&self) -> ClientBrokerNegotiation {
-        ClientBrokerNegotiation {
-            monto: ProtocolVersion {
-                major: 3,
-                minor: 0,
-                patch: 0,
-            },
-            broker: self.config.version.clone().into(),
-            extensions: self.config.extensions.client.clone(),
-            services: self.services.iter().map(|s| s.negotiation.clone()).collect(),
-        }
-    }
-
     /// Returns a Future that will resolve once the given Future resolves,
     /// serving clients until then.
     pub fn serve_until<F: Future>(self, stop: F) -> ServeFuture<F> {
@@ -61,8 +51,36 @@ impl Service for Client {
     type Future = Box<Future<Item=Response<Body>, Error=HyperError>>;
 
     fn call(&self, req: Request) -> Self::Future {
-        info!("Got request {:?}", req);
-        unimplemented!()
+        let (method, uri, _, headers, body) = req.deconstruct();
+        match (method, uri.path()) {
+            (Method::Post, "/monto/version") => {
+                let broker = self.0.borrow();
+                let res = serde_json::to_string(&ClientBrokerNegotiation {
+                    monto: ProtocolVersion {
+                        major: 3,
+                        minor: 0,
+                        patch: 0,
+                    },
+                    broker: broker.config.version.clone().into(),
+                    extensions: broker.config.extensions.client.clone(),
+                    services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
+                }).unwrap();
+                let status = StatusCode::NotImplemented;
+                Box::new(ok(Response::new()
+                    .with_status(status)
+                    .with_header(ContentLength(res.len() as u64))
+                    .with_header(ContentType("application/json".parse().unwrap()))
+                    .with_body(res)))
+            },
+            (method, path) => {
+                warn!("404 {} {}", method, path);
+                Box::new(ok(Response::new()
+                    .with_body("404 Not Found")
+                    .with_header(ContentLength(13))
+                    .with_header(ContentType("text/plain".parse().unwrap()))
+                    .with_status(StatusCode::NotFound)))
+            },
+        }
     }
 }
 
@@ -88,8 +106,7 @@ impl<F: Future> Future for ServeFuture<F> {
                     Ok(Async::NotReady)
                 },
                 Ok(Async::Ready(None)) => {
-                    error!("TcpListener.incoming() stream ended! (This is documented to be impossible)");
-                    unreachable!();
+                    panic!("TcpListener.incoming() stream ended! (This is documented to be impossible)");
                 },
                 Ok(Async::NotReady) => Ok(Async::NotReady),
                 Err(err) => {

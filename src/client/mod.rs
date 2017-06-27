@@ -19,8 +19,7 @@ use serde_json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::marker::PhantomData;
 use tokio_core::reactor::Handle;
-use url;
-use url::Url;
+use url::{ParseError, Url};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 
@@ -51,11 +50,15 @@ impl Client {
     /// and
     /// [4.2](https://melt-umn.github.io/monto-v3-draft/draft02/#4-2-version-negotiation)
     /// of the specification.
-    pub fn new(config: Config, handle: Handle) -> Result<NewFuture, url::ParseError> {
+    pub fn new(config: Config, handle: Handle) -> Result<NewFuture, ParseError> {
         let scheme = "http"; // TODO TLS support.
 
-        let base_url = format!("{}://{}:{}/monto", scheme, config.host, config.port);
-        let base_url = Url::parse(&base_url)?;
+        let base_url = format!("{}://{}:{}/monto/", scheme, config.host, config.port);
+        let mut base_url = Url::parse(&base_url)?;
+        if !base_url.path().ends_with('/') {
+            let path = format!("{}/", base_url.path());
+            base_url.set_path(&path);
+        }
 
         let body = serde_json::to_string(&ClientNegotiation {
             monto: ProtocolVersion {
