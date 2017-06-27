@@ -4,8 +4,9 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
+use either::{Left, Right};
 use futures::{Async, Future, Poll, Stream};
-use futures::future::{Empty, empty, ok};
+use futures::future::{Empty, empty, err, ok};
 use hyper::{Body, Method, Request, Response, StatusCode};
 use hyper::Error as HyperError;
 use hyper::header::{ContentLength, ContentType};
@@ -16,8 +17,8 @@ use tokio_core::reactor::Handle;
 use void::Void;
 
 use broker::Broker;
-use client::messages::ClientBrokerNegotiation;
-use common::json_response;
+use client::messages::{ClientNegotiation, ClientBrokerNegotiation};
+use common::{error_response, json_request, json_response};
 use common::messages::ProtocolVersion;
 
 impl Broker {
@@ -60,22 +61,28 @@ impl Service for Client {
     type Future = Box<Future<Item=Response<Body>, Error=HyperError>>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let (method, uri, _, headers, body) = req.deconstruct();
+        let (method, uri, _, _, body) = req.deconstruct();
         match (method, uri.path()) {
             (Method::Post, "/monto/version") => {
-                let broker = self.0.borrow();
-                let cbn = ClientBrokerNegotiation {
-                    monto: ProtocolVersion {
-                        major: 3,
-                        minor: 0,
-                        patch: 0,
-                    },
-                    broker: broker.config.version.clone().into(),
-                    extensions: broker.config.extensions.client.clone(),
-                    services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
-                };
-                let status = StatusCode::NotImplemented;
-                json_response(cbn, status)
+                Box::new(json_request(body).and_then(|cn: ClientNegotiation| {
+                    debug!("Got ClientNegotiation {:?}", cn);
+                    let broker = self.0.borrow();
+                    let cbn = ClientBrokerNegotiation {
+                        monto: ProtocolVersion {
+                            major: 3,
+                            minor: 0,
+                            patch: 0,
+                        },
+                        broker: broker.config.version.clone().into(),
+                        extensions: broker.config.extensions.client.clone(),
+                        services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
+                    };
+                    let status = StatusCode::NotImplemented;
+                    json_response(cbn, status)
+                }).or_else(|e| match e {
+                    Left(e) => Box::new(err(e)),
+                    Right(e) => error_response(StatusCode::InternalServerError),
+                }))
             },
             (method, path) => {
                 warn!("404 {} {}", method, path);
