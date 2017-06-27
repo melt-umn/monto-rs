@@ -64,33 +64,49 @@ impl Service for Client {
         let (method, uri, _, _, body) = req.deconstruct();
         match (method, uri.path()) {
             (Method::Post, "/monto/version") => {
-                Box::new(json_request(body).and_then(|cn: ClientNegotiation| {
+                // Make a reference to the Broker, which we move into the and_then closure.
+                let broker = self.0.clone();
+
+                // Deserialize the body, then...
+                Box::new(json_request(body).and_then(move |cn: ClientNegotiation| {
+                    // Log that we got the client negotiation message.
                     debug!("Got ClientNegotiation {:?}", cn);
-                    let broker = self.0.borrow();
-                    let cbn = ClientBrokerNegotiation {
-                        monto: ProtocolVersion {
-                            major: 3,
-                            minor: 0,
-                            patch: 0,
-                        },
-                        broker: broker.config.version.clone().into(),
-                        extensions: broker.config.extensions.client.clone(),
-                        services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
+
+                    // Build a response.
+                    let cbn = {
+                        let broker = broker.borrow();
+                        ClientBrokerNegotiation {
+                            monto: ProtocolVersion {
+                                major: 3,
+                                minor: 0,
+                                patch: 0,
+                            },
+                            broker: broker.config.version.clone().into(),
+                            extensions: broker.config.extensions.client.clone(),
+                            services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
+                        }
                     };
+
+                    // TODO Check for compatibility.
                     let status = StatusCode::NotImplemented;
+                   
+                    // Send the response.
                     json_response(cbn, status)
-                }).or_else(|e| match e {
-                    Left(e) => Box::new(err(e)),
-                    Right(e) => error_response(StatusCode::InternalServerError),
+                }).or_else(|e| {
+                    // Log the error.
+                    error!("{}", e);
+
+                    match e {
+                        // If it's a Hyper error, just pass it along.
+                        Left(e) => Box::new(err(e)),
+                        // If it's serde's though, transform it into a 500.
+                        Right(e) => error_response(StatusCode::InternalServerError)
+                    }
                 }))
             },
             (method, path) => {
                 warn!("404 {} {}", method, path);
-                Box::new(ok(Response::new()
-                    .with_body("404 Not Found")
-                    .with_header(ContentLength(13))
-                    .with_header(ContentType("text/plain".parse().unwrap()))
-                    .with_status(StatusCode::NotFound)))
+                error_response(StatusCode::NotFound)
             },
         }
     }
