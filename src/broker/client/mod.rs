@@ -1,4 +1,7 @@
 //! The Client Protocol side of the Broker.
+//!
+//! TODO: This whole module needs a rusty axe and some lighter fluid applied to
+//! it.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -11,6 +14,7 @@ use hyper::{Body, Method, Request, Response, StatusCode};
 use hyper::Error as HyperError;
 use hyper::header::{ContentLength, ContentType};
 use hyper::server::{Http, Service};
+use log::LogLevel;
 use serde_json;
 use tokio_core::net::{Incoming, TcpListener, TcpStream};
 use tokio_core::reactor::Handle;
@@ -62,7 +66,7 @@ impl Service for Client {
 
     fn call(&self, req: Request) -> Self::Future {
         let (method, uri, _, _, body) = req.deconstruct();
-        match (method, uri.path()) {
+        Box::new(match (method.clone(), uri.path()) {
             (Method::Post, "/monto/version") => {
                 // Make a reference to the Broker, which we move into the and_then closure.
                 let broker = self.0.clone();
@@ -87,9 +91,13 @@ impl Service for Client {
                         }
                     };
 
-                    // TODO Check for compatibility.
-                    let status = StatusCode::NotImplemented;
-                   
+                    // Check for compatibility.
+                    let status = if cbn.monto.compatible(&cn.monto) {
+                        StatusCode::Ok
+                    } else {
+                        StatusCode::BadRequest
+                    };
+
                     // Send the response.
                     json_response(cbn, status)
                 }).or_else(|e| {
@@ -104,11 +112,19 @@ impl Service for Client {
                     }
                 }))
             },
-            (method, path) => {
-                warn!("404 {} {}", method, path);
-                error_response(StatusCode::NotFound)
-            },
-        }
+            (method, path) => error_response(StatusCode::NotFound),
+        }.map(move |r| {
+            let status = r.status();
+            let level = if status.is_server_error() || status.is_strange_status() {
+                LogLevel::Error
+            } else if status.is_client_error() {
+                LogLevel::Warn
+            } else {
+                LogLevel::Info
+            };
+            log!(level, "{} {} {}", u16::from(r.status()), method, uri.path());
+            r
+        }))
     }
 }
 

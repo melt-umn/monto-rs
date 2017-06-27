@@ -23,8 +23,35 @@ pub struct Identifier {
 }
 
 impl<'de> Deserialize<'de> for Identifier {
-    fn deserialize<D: Deserializer<'de>>(_d: D) -> Result<Self, D::Error> {
-        unimplemented!()
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        use serde::de::{Error, Unexpected, Visitor};
+
+        struct IdentifierVisitor;
+        impl<'de> Visitor<'de> for IdentifierVisitor {
+            type Value = Identifier;
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                write!(fmt, "a reverse-hostname-style dotted identifier with at least two components")
+            }
+
+            fn visit_str<E: Error>(self, v: &str) -> Result<Self::Value, E> {
+                lazy_static! {
+                    static ref PART: Regex = Regex::new("[a-zA-Z_][a-zA-Z_0-9]*").unwrap();
+                }
+
+                let mut parts = v.split('.').map(str::to_owned).collect::<Vec<_>>();
+                if parts.len() < 2 || parts.iter().any(|p| !PART.is_match(p)) {
+                    return Err(Error::invalid_value(Unexpected::Str(v), &self));
+                }
+
+                let name = parts.pop().unwrap();
+                Ok(Identifier {
+                    name,
+                    namespace: parts,
+                })
+            }
+        }
+
+        d.deserialize_string(IdentifierVisitor)
     }
 }
 

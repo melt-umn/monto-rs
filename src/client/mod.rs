@@ -41,7 +41,7 @@ impl Client {
         let url = match service {
             Some(service) => self.base_url.join(&service.to_string()),
             None => self.base_url.join("broker"),
-        }.expect("TODO");
+        }.expect("Illegal internal client state -- base_url is cannot-be-a-base");
         unimplemented!()
     }
 
