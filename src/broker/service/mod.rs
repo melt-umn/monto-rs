@@ -1,12 +1,14 @@
 //! The Service Protocol side of the Broker.
 
-use broker::config::ServiceConfig;
-use common::messages::ProtocolVersion;
+use std::collections::BTreeSet;
+
 use futures::{Async, Future, Poll};
 use hyper;
-use service::messages::{ServiceExtension, ServiceNegotiation};
-use std::collections::BTreeSet;
 use tokio_core::reactor::Handle;
+
+use broker::config::ServiceConfig;
+use common::messages::ProtocolVersion;
+use service::messages::{ServiceExtension, ServiceNegotiation};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 

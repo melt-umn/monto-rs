@@ -2,9 +2,10 @@
 
 mod negotiation;
 
-use broker::Broker;
-use client::messages::ClientBrokerNegotiation;
-use common::messages::ProtocolVersion;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
+
 use futures::{Async, Future, Poll, Stream};
 use futures::future::{Empty, empty, ok};
 use hyper::{Body, Method, Request, Response, StatusCode};
@@ -12,12 +13,13 @@ use hyper::Error as HyperError;
 use hyper::header::{ContentLength, ContentType};
 use hyper::server::{Http, Service};
 use serde_json;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
 use tokio_core::net::{Incoming, TcpListener, TcpStream};
 use tokio_core::reactor::Handle;
 use void::Void;
+
+use broker::Broker;
+use client::messages::ClientBrokerNegotiation;
+use common::messages::ProtocolVersion;
 
 impl Broker {
     /// Returns a Future that will resolve once the given Future resolves,

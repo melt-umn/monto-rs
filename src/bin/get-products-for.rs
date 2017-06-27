@@ -9,8 +9,9 @@
 extern crate monto;
 extern crate tokio_core;
 
-use monto::client::{Client, Config};
 use tokio_core::reactor::Core;
+
+use monto::client::{Client, Config};
 
 // TODO Implement error handling.
 

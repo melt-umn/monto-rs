@@ -6,20 +6,21 @@
 pub mod messages;
 mod negotiation;
 
-pub use self::negotiation::{NewFuture, NewFutureError, NewFutureErrorKind};
+use std::collections::{BTreeMap, BTreeSet};
+use std::marker::PhantomData;
 
-use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
 use futures::{Async, Future, Poll};
 use hyper;
 use hyper::{Get, Post, Put, Request, StatusCode, Uri};
 use hyper::client::FutureResponse;
 use hyper::header::{ContentLength, ContentType};
-use self::messages::{BrokerGetError, BrokerPutError, ClientBrokerNegotiation, ClientNegotiation};
 use serde_json;
-use std::collections::{BTreeMap, BTreeSet};
-use std::marker::PhantomData;
 use tokio_core::reactor::Handle;
 use url::{ParseError, Url};
+
+use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
+use self::messages::{BrokerGetError, BrokerPutError, ClientBrokerNegotiation, ClientNegotiation};
+pub use self::negotiation::{NewFuture, NewFutureError, NewFutureErrorKind};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 

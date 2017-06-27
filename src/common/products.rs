@@ -2,9 +2,10 @@
 //! [Section 6](https://melt-umn.github.io/monto-v3-draft/draft02/#6-products)
 //! of the Monto specification.
 
-use common::messages::{ProductName, ProductValue};
 use std::fs::FileType;
 use std::path::PathBuf;
+
+use common::messages::{ProductName, ProductValue};
 
 /// A listing of a directory.
 ///

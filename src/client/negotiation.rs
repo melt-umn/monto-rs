@@ -2,8 +2,9 @@ use futures::{Async, Future, Poll};
 use hyper;
 use hyper::StatusCode;
 use hyper::client::FutureResponse;
-use super::{Client, HttpClient};
 use url::Url;
+
+use super::{Client, HttpClient};
 
 /// A Future for a Client negotiating version information and establishing a
 /// connection to the Broker.

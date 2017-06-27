@@ -1,11 +1,13 @@
 //! The configuration for the Broker.
 
+use std::collections::BTreeSet;
+use std::net::SocketAddr;
+
+use url::Url;
+
 use client::messages::ClientExtension;
 use common::messages::{Identifier, SoftwareVersion};
 use service::messages::ServiceExtension;
-use std::collections::BTreeSet;
-use std::net::SocketAddr;
-use url::Url;
 
 /// The Broker's configuration.
 ///

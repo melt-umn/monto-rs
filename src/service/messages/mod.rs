@@ -2,8 +2,9 @@
 //! [Section 5.4](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-service-protocol-messages)
 //! of the specification.
 
-use common::messages::{ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
 use std::collections::BTreeSet;
+
+use common::messages::{ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
 
 /// The Message that a Service sends to a Broker during version negotiation.
 ///

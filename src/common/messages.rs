@@ -2,13 +2,14 @@
 //! [Section 3.1](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-common-messages)
 //! of the specification.
 
-use regex::Regex;
-use semver::Version as SemverVersion;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+
+use regex::Regex;
+use semver::Version as SemverVersion;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
 ///

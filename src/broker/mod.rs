@@ -6,9 +6,10 @@ pub mod service;
 
 use futures::{Async, Future, Poll};
 use futures::future::{JoinAll, join_all};
+use tokio_core::reactor::Handle;
+
 use self::config::Config;
 use self::service::{NewServiceFuture, Service};
-use tokio_core::reactor::Handle;
 
 /// The Broker.
 pub struct Broker {
