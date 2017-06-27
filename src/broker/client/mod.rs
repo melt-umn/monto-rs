@@ -1,7 +1,5 @@
 //! The Client Protocol side of the Broker.
 
-mod negotiation;
-
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
@@ -19,11 +17,16 @@ use void::Void;
 
 use broker::Broker;
 use client::messages::ClientBrokerNegotiation;
+use common::json_response;
 use common::messages::ProtocolVersion;
 
 impl Broker {
     /// Returns a Future that will resolve once the given Future resolves,
     /// serving clients until then.
+    ///
+    /// TODO: This can be made more efficient when
+    /// [`conservative_impl_trait`](https://github.com/rust-lang/rust/issues/34511)
+    /// is stabilized.
     pub fn serve_until<F: Future>(self, stop: F) -> ServeFuture<F> {
         let listener = TcpListener::bind(&self.config.net.addr, &self.handle)
             .expect("TODO proper error handling")
@@ -39,6 +42,10 @@ impl Broker {
     }
 
     /// Returns a Future that will never resolve, but will serves clients forever.
+    ///
+    /// TODO: This can be made more efficient when
+    /// [`conservative_impl_trait`](https://github.com/rust-lang/rust/issues/34511)
+    /// is stabilized.
     pub fn serve_forever(self) -> ServeFuture<Empty<Void, Void>> {
         self.serve_until(empty())
     }
@@ -57,7 +64,7 @@ impl Service for Client {
         match (method, uri.path()) {
             (Method::Post, "/monto/version") => {
                 let broker = self.0.borrow();
-                let res = serde_json::to_string(&ClientBrokerNegotiation {
+                let cbn = ClientBrokerNegotiation {
                     monto: ProtocolVersion {
                         major: 3,
                         minor: 0,
@@ -66,13 +73,9 @@ impl Service for Client {
                     broker: broker.config.version.clone().into(),
                     extensions: broker.config.extensions.client.clone(),
                     services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
-                }).unwrap();
+                };
                 let status = StatusCode::NotImplemented;
-                Box::new(ok(Response::new()
-                    .with_status(status)
-                    .with_header(ContentLength(res.len() as u64))
-                    .with_header(ContentType("application/json".parse().unwrap()))
-                    .with_body(res)))
+                json_response(cbn, status)
             },
             (method, path) => {
                 warn!("404 {} {}", method, path);

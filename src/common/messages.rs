@@ -209,6 +209,12 @@ impl ProtocolVersion {
             major, minor, patch,
         }
     }
+
+    /// Returns whether the two protocol versions are compatible. The lowest
+    /// (by the Ord implementation) is the one to use.
+    pub fn compatible(&self, other: &ProtocolVersion) -> bool {
+        self.major == other.major
+    }
 }
 
 impl Display for ProtocolVersion {

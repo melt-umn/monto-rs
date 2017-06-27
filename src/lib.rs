@@ -4,6 +4,7 @@
 #![deny(missing_docs)]
 
 extern crate dirs;
+extern crate either;
 #[macro_use]
 extern crate error_chain;
 extern crate futures;
