@@ -10,6 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::marker::PhantomData;
 
 use futures::{Async, Future, Poll};
+use futures::future::err;
 use hyper;
 use hyper::{Get, Post, Put, Request, StatusCode, Uri};
 use hyper::client::FutureResponse;
@@ -20,7 +21,7 @@ use url::{ParseError, Url};
 
 use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
 use self::messages::{BrokerGetError, BrokerPutError, ClientBrokerNegotiation, ClientNegotiation};
-pub use self::negotiation::{NewFuture, NewFutureError, NewFutureErrorKind};
+pub use self::negotiation::{NegotiationError, NegotiationErrorKind};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 
@@ -41,7 +42,7 @@ impl Client {
         let url = match service {
             Some(service) => self.base_url.join(&service.to_string()),
             None => self.base_url.join("broker"),
-        }.expect("Illegal internal client state -- base_url is cannot-be-a-base");
+        }.expect("Illegal internal Client state -- base_url is cannot-be-a-base");
         unimplemented!()
     }
 
@@ -51,11 +52,14 @@ impl Client {
     /// and
     /// [4.2](https://melt-umn.github.io/monto-v3-draft/draft02/#4-2-version-negotiation)
     /// of the specification.
-    pub fn new(config: Config, handle: Handle) -> Result<NewFuture, ParseError> {
+    pub fn new(config: Config, handle: Handle) -> Box<Future<Item=Client, Error=NegotiationError>> {
         let scheme = "http"; // TODO TLS support.
 
         let base_url = format!("{}://{}:{}/monto/", scheme, config.host, config.port);
-        let mut base_url = Url::parse(&base_url)?;
+        let mut base_url = match Url::parse(&base_url) {
+            Ok(url) => url,
+            Err(e) => return Box::new(err(NegotiationErrorKind::BadConfigURL(e).into())),
+        };
         if !base_url.path().ends_with('/') {
             let path = format!("{}/", base_url.path());
             base_url.set_path(&path);
@@ -71,7 +75,10 @@ impl Client {
             extensions: BTreeSet::new(),
         }).unwrap();
 
-        let url = base_url.join("version")?;
+        let url = match base_url.join("version") {
+            Ok(url) => url,
+            Err(e) => return Box::new(err(NegotiationErrorKind::BadConfigURL(e).into())),
+        };
         let mut req = Request::new(Post, url.to_string().parse().unwrap());
         req.headers_mut().set(ContentType::json());
         req.headers_mut().set(ContentLength(body.len() as u64));
@@ -79,7 +86,7 @@ impl Client {
 
         let http = HttpClient::new(&handle);
         let future = http.request(req);
-        Ok(NewFuture::new(base_url, http, future))
+        negotiation::negotiate(base_url, http, future)
     }
 
     /// Attempts to retrieve a Product from the Broker, as described in

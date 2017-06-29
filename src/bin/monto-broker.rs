@@ -2,19 +2,21 @@ extern crate futures;
 #[macro_use]
 extern crate log;
 extern crate monto;
-extern crate pretty_env_logger;
+extern crate simple_logger;
 extern crate tokio_core;
 extern crate toml;
 extern crate void;
 
-use monto::broker::Broker;
-use monto::broker::config::Config;
+use log::LogLevel;
 use tokio_core::reactor::Core;
 use void::{ResultVoidExt, unreachable};
 
+use monto::broker::Broker;
+use monto::broker::config::Config;
+
 fn main() {
     // Start logging, or die.
-    pretty_env_logger::init().unwrap();
+    simple_logger::init_with_level(LogLevel::Info).unwrap();
 
     // Load the configuration.
     let config = Config::load();

@@ -21,7 +21,7 @@ fn main() {
 
     let config = Config::default();
     let client_handle = core.handle();
-    let client = core.run(Client::new(config, client_handle).unwrap())
+    let client = core.run(Client::new(config, client_handle))
         .expect("Couldn't connect to broker");
 
     let products = client.products();
