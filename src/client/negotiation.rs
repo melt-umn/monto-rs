@@ -1,26 +1,30 @@
-use either::Left;
+use either::{Either, Left, Right};
 use futures::{Async, Future, Poll};
 use hyper;
-use hyper::StatusCode;
+use hyper::{Body, Response, StatusCode};
 use hyper::client::FutureResponse;
 use url::{ParseError as UrlError, Url};
 
+use common::json_request;
 use super::{Client, HttpClient};
-
-/// Handles negotiating a protocol version and extensions with the Broker.
-pub fn negotiate(base_url: Url, http: HttpClient, f: FutureResponse) -> Box<Future<Item=Client, Error=NegotiationError>> {
-    Box::new(f.map_err(Left)
-        .map(Response::Body)
-        .and_then(json_request))
-}
 
 /// A Future for a Client negotiating version information and establishing a
 /// connection to the Broker.
-pub struct Negotiation(Url, HttpClient, FutureResponse);
+pub struct Negotiation {
+    inner: Result<NegotiationInner, Option<NegotiationError>>,
+}
 
 impl Negotiation {
-    pub(crate) fn new(url: Url, client: HttpClient, res: FutureResponse) -> Negotiation {
-        Negotiation(url, client, res)
+    /// Creates a new instance of Negotiation.
+    pub(crate) fn new(base_url: Url, http: HttpClient, f: FutureResponse) -> Negotiation {
+        unimplemented!()
+    }
+
+    /// Creates a new Negotiation that immediately resolves to an error.
+    pub(crate) fn err(err: NegotiationError) -> Negotiation {
+        Negotiation {
+            inner: Err(Some(err)),
+        }
     }
 }
 
@@ -29,13 +33,40 @@ impl Future for Negotiation {
     type Error = NegotiationError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        match self.2.poll() {
-            Ok(Async::Ready(res)) => match res.status() {
-                StatusCode::Ok => unimplemented!(),
-                code => Err(NegotiationErrorKind::BadStatus(code).into()),
+        match self.inner {
+            Ok(ref mut future) => future.poll(),
+            Err(ref mut err) => Err(err.take().unwrap()),
+        }
+    }
+}
+
+struct NegotiationInner {
+    url: Url,
+    client: HttpClient,
+    state: Either<FutureResponse, (StatusCode, Body, Vec<u8>)>,
+}
+
+impl Future for NegotiationInner {
+    type Item = Client;
+    type Error = NegotiationError;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        match self.state {
+            Left(ref mut future) => match future.poll() {
+                Ok(Async::Ready(res)) => {
+                    // This ought to be safe, I think.
+                    // Do I need to use {,Ref,Unsafe}Cell?
+
+                    // self.state = Right((res.status(), res.body(), Vec::new()));
+                    Ok(Async::NotReady)
+                },
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Err(err) => Err(err.into()),
             },
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(err) => Err(err.into()),
+            Right(ref mut state) => {
+                // let (status, body, buf) = state;
+                unimplemented!()
+            },
         }
     }
 }

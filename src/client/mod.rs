@@ -21,7 +21,7 @@ use url::{ParseError, Url};
 
 use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
 use self::messages::{BrokerGetError, BrokerPutError, ClientBrokerNegotiation, ClientNegotiation};
-pub use self::negotiation::{NegotiationError, NegotiationErrorKind};
+pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 
@@ -52,13 +52,13 @@ impl Client {
     /// and
     /// [4.2](https://melt-umn.github.io/monto-v3-draft/draft02/#4-2-version-negotiation)
     /// of the specification.
-    pub fn new(config: Config, handle: Handle) -> Box<Future<Item=Client, Error=NegotiationError>> {
+    pub fn new(config: Config, handle: Handle) -> Negotiation {
         let scheme = "http"; // TODO TLS support.
 
         let base_url = format!("{}://{}:{}/monto/", scheme, config.host, config.port);
         let mut base_url = match Url::parse(&base_url) {
             Ok(url) => url,
-            Err(e) => return Box::new(err(NegotiationErrorKind::BadConfigURL(e).into())),
+            Err(e) => return Negotiation::err(NegotiationErrorKind::BadConfigURL(e).into()),
         };
         if !base_url.path().ends_with('/') {
             let path = format!("{}/", base_url.path());
@@ -77,7 +77,7 @@ impl Client {
 
         let url = match base_url.join("version") {
             Ok(url) => url,
-            Err(e) => return Box::new(err(NegotiationErrorKind::BadConfigURL(e).into())),
+            Err(e) => return Negotiation::err(NegotiationErrorKind::BadConfigURL(e).into()),
         };
         let mut req = Request::new(Post, url.to_string().parse().unwrap());
         req.headers_mut().set(ContentType::json());
@@ -86,7 +86,7 @@ impl Client {
 
         let http = HttpClient::new(&handle);
         let future = http.request(req);
-        negotiation::negotiate(base_url, http, future)
+        Negotiation::new(base_url, http, future)
     }
 
     /// Attempts to retrieve a Product from the Broker, as described in
