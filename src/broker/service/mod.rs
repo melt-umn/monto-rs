@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use futures::{Async, Future, Poll};
+use futures::{Future, Poll};
 use hyper;
 use tokio_core::reactor::Handle;
 
@@ -29,7 +29,7 @@ pub struct Service {
 
 impl Service {
     /// Initiates a connection to the Service.
-    pub fn connect(config: &ServiceConfig, handle: &Handle) -> NewServiceFuture {
+    pub fn connect(config: &ServiceConfig, _handle: &Handle) -> NewServiceFuture {
         debug!("Connecting to service: {:?}", config);
         unimplemented!()
     }

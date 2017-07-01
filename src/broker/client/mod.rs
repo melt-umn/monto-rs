@@ -5,18 +5,15 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
 
 use either::{Left, Right};
 use futures::{Async, Future, Poll, Stream};
-use futures::future::{Empty, empty, err, ok};
+use futures::future::{Empty, empty, err};
 use hyper::{Body, Method, Request, Response, StatusCode};
 use hyper::Error as HyperError;
-use hyper::header::{ContentLength, ContentType};
 use hyper::server::{Http, Service};
 use log::LogLevel;
-use serde_json;
-use tokio_core::net::{Incoming, TcpListener, TcpStream};
+use tokio_core::net::{Incoming, TcpListener};
 use tokio_core::reactor::Handle;
 use void::Void;
 
@@ -108,11 +105,11 @@ impl Service for Client {
                         // If it's a Hyper error, just pass it along.
                         Left(e) => Box::new(err(e)),
                         // If it's serde's though, transform it into a 500.
-                        Right(e) => error_response(StatusCode::InternalServerError)
+                        Right(_) => error_response(StatusCode::InternalServerError)
                     }
                 }))
             },
-            (method, path) => error_response(StatusCode::NotFound),
+            _ => error_response(StatusCode::NotFound),
         }.map(move |r| {
             let status = r.status();
             let level = if status.is_server_error() || status.is_strange_status() {

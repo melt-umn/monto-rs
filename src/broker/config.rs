@@ -7,7 +7,6 @@ use url::Url;
 
 use client::messages::ClientExtension;
 use common::messages::{Identifier, SoftwareVersion};
-use service::messages::ServiceExtension;
 
 /// The Broker's configuration.
 ///

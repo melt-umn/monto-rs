@@ -9,18 +9,17 @@ mod negotiation;
 use std::collections::{BTreeMap, BTreeSet};
 use std::marker::PhantomData;
 
-use futures::{Async, Future, Poll};
-use futures::future::err;
+use futures::{Future, Poll};
 use hyper;
-use hyper::{Get, Post, Put, Request, StatusCode, Uri};
+use hyper::{Get, Post, Request, Uri};
 use hyper::client::FutureResponse;
 use hyper::header::{ContentLength, ContentType};
 use serde_json;
 use tokio_core::reactor::Handle;
-use url::{ParseError, Url};
+use url::Url;
 
 use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
-use self::messages::{BrokerGetError, BrokerPutError, ClientBrokerNegotiation, ClientNegotiation};
+use self::messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
@@ -39,10 +38,17 @@ impl Client {
     /// [hyperium/hyper#1102](https://github.com/hyperium/hyper/issues/1102) is
     /// fixed.
     fn make_uri(&self, service: Option<&Identifier>, product: &ProductName, language: Option<&Language>, path: &str) -> Uri {
-        let url = match service {
-            Some(service) => self.base_url.join(&service.to_string()),
-            None => self.base_url.join("broker"),
-        }.expect("Illegal internal Client state -- base_url is cannot-be-a-base");
+        let mut url = match service {
+            Some(service) => self.base_url.join(&format!("{}/", service)),
+            None => self.base_url.join("broker/"),
+        }.and_then(|url| {
+            url.join(&product.to_string())
+        }).expect("Illegal internal Client state -- base_url is cannot-be-a-base");
+
+        url.query_pairs_mut().append_pair("path", path);
+        if let Some(language) = language {
+            url.query_pairs_mut().append_pair("language", &language.to_string());
+        }
         unimplemented!()
     }
 
@@ -109,6 +115,7 @@ impl Client {
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
     /// of the specification.
     pub fn send_product<P: ProductValue>(&mut self, p: &Product<P>) -> SendFuture {
+        let _ = p;
         // let mut req = Request::new(Put, self.make_uri(None, &p.name, Some(&p.language), &p.path));
         unimplemented!()
     }
