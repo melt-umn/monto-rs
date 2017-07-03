@@ -2,7 +2,10 @@
 !.gitignore
 !.travis.yml
 
-**/*.rs.bk
+*.bin
+*.rs.bk
+
 Cargo.lock
+misc/report/
 staging/
 target/
