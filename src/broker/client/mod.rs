@@ -38,6 +38,7 @@ impl Broker {
         ServeFuture {
             broker,
             handle,
+            http: Http::new(),
             listener,
             stop,
         }
@@ -129,31 +130,33 @@ impl Service for Client {
 pub struct ServeFuture<F: Future> {
     broker: Rc<RefCell<Broker>>,
     handle: Handle,
+    http: Http,
     listener: Incoming,
     stop: F,
 }
 
-impl<F: Future> Future for ServeFuture<F> {
+impl<F: Future> Future for ServeFuture<F> where F::Item: ::std::fmt::Debug, F::Error: ::std::fmt::Debug {
     type Item = F::Item;
     type Error = F::Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match self.stop.poll() {
-            Ok(Async::NotReady) => match self.listener.poll() {
-                Ok(Async::Ready(Some((stream, remote)))) => {
-                    info!("Got client connection from {}", remote);
-                    let service = Client(self.broker.clone());
-                    Http::new().bind_connection(&self.handle, stream, remote, service);
-                    Ok(Async::NotReady)
-                },
-                Ok(Async::Ready(None)) => {
-                    panic!("TcpListener.incoming() stream ended! (This is documented to be impossible)");
-                },
-                Ok(Async::NotReady) => Ok(Async::NotReady),
-                Err(err) => {
-                    error!("{}", err);
-                    panic!("TODO proper error handling: {}", err);
-                },
+            Ok(Async::NotReady) => loop {
+                match self.listener.poll() {
+                    Ok(Async::Ready(Some((stream, remote)))) => {
+                        info!("Got client connection from {}", remote);
+                        let service = Client(self.broker.clone());
+                        self.http.bind_connection(&self.handle, stream, remote, service);
+                    },
+                    Ok(Async::Ready(None)) => {
+                        panic!("TcpListener.incoming() stream ended! (This is documented to be impossible)");
+                    },
+                    Ok(Async::NotReady) => return Ok(Async::NotReady),
+                    Err(err) => {
+                        error!("{}", err);
+                        panic!("TODO proper error handling: {}", err);
+                    },
+                }
             },
             poll => poll,
         }

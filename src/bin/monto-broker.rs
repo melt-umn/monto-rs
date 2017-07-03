@@ -35,4 +35,3 @@ fn main() {
     let r = core.run(broker.serve_forever());
     unreachable(r.void_unwrap());
 }
-
