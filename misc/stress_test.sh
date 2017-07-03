@@ -18,4 +18,4 @@ echo "Creating reports..."
 report text txt
 report json json
 report plot html
-report 'hist[0,2ms,4ms,6ms,8ms,10ms]' hist.txt
+report 'hist[0,500us,1ms,2ms,5ms]' hist.txt
