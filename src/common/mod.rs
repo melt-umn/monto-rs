@@ -5,7 +5,7 @@ pub mod messages;
 pub mod products;
 
 use either::{Either, Left, Right};
-use futures::{Future, Stream};
+use futures::{Async, Future, Stream};
 use futures::future::{err, ok};
 use hyper::{Body, Response, StatusCode};
 use hyper::Error as HyperError;

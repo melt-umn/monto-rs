@@ -2,6 +2,7 @@ use std::mem;
 
 use either::{Either, Left, Right};
 use futures::{Async, Future, Poll, Stream};
+use futures::stream::Concat2;
 use hyper;
 use hyper::{Body, StatusCode};
 use hyper::client::FutureResponse;
@@ -9,30 +10,37 @@ use serde_json;
 use url::{ParseError as UrlError, Url};
 
 use super::{Client, HttpClient};
+use super::messages::{ClientNegotiation, ClientBrokerNegotiation};
 
 /// A Future for a Client negotiating version information and establishing a
 /// connection to the Broker.
-#[derive(Debug)]
 pub struct Negotiation {
-    inner: Result<NegotiationInner, Option<NegotiationError>>,
+    inner: NegotiationInner,
 }
 
 impl Negotiation {
     /// Creates a new instance of Negotiation.
-    pub(crate) fn new(base_url: Url, client: HttpClient, future: FutureResponse) -> Negotiation {
-        Negotiation {
-            inner: Ok(NegotiationInner {
-                url: base_url,
-                client,
-                state: Left(future),
-            }),
-        }
+    pub(crate) fn new(base_url: Url, client: HttpClient, cn: ClientNegotiation, future: FutureResponse) -> Negotiation {
+        let inner = future.map_err(NegotiationError::from)
+            .and_then(|res| res.body().concat2().map_err(NegotiationError::from))
+            .and_then(|body| serde_json::from_slice(body.as_ref()).map_err(NegotiationError::from))
+            .and_then(|cbn| Negotiation::negotiate(base_url, client, cn, cbn));
+        Negotiation { inner: Box::new(inner) }
     }
 
-    /// Creates a new Negotiation that immediately resolves to an error.
+    /// Creates a new instance of Negotiation that immediately returns an error.
     pub(crate) fn err(err: NegotiationError) -> Negotiation {
-        Negotiation {
-            inner: Err(Some(err)),
+        unimplemented!()
+    }
+
+    fn negotiate(base_url: Url, http: HttpClient, cn: ClientNegotiation, cbn: ClientBrokerNegotiation) -> Result<Client, NegotiationError> {
+        if cn.monto.compatible(&cbn.monto) {
+            let services = cbn.services.into_iter()
+                .map(|sn| (sn.service.id, sn.products))
+                .collect();
+            Ok(Client { base_url, http, services })
+        } else {
+            unimplemented!()
         }
     }
 }
@@ -42,64 +50,11 @@ impl Future for Negotiation {
     type Error = NegotiationError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        println!("neg {:?}", self);
-        match self.inner {
-            Ok(ref mut future) => future.poll(),
-            Err(ref mut err) => Err(err.take().unwrap()),
-        }
+        self.inner.poll()
     }
 }
 
-#[derive(Debug)]
-struct NegotiationInner {
-    url: Url,
-    client: HttpClient,
-    state: Either<FutureResponse, (StatusCode, Body, Vec<u8>)>,
-}
-
-impl Future for NegotiationInner {
-    type Item = Client;
-    type Error = NegotiationError;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        // State machines interact poorly with Rust's lifetime system. This may
-        // be fixed in a future release. Alternately, it'd probably be fairly
-        // easy to make a procedural macro that overloads the `become` syntax.
-        //
-        // As a result, this function is somewhat convoluted. When procedural
-        // macros are stabilized, I'll probably give the state machine
-        // generator a try; if it goes well, this whole module will probaby be
-        // refactored.
-
-        let (next_state, result) = match self.state {
-            Left(ref mut future) => match future.poll() {
-                Ok(Async::Ready(res)) => {
-                    let next = Right((res.status(), res.body(), Vec::new()));
-                    (next, Async::NotReady)
-                },
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(err) => return Err(err.into()),
-            },
-            Right(ref mut state) => match state.1.poll() {
-                Ok(Async::Ready(Some(chunk))) => {
-                    println!("chunk {:?}", chunk);
-                    state.2.extend(chunk);
-                    return Ok(Async::NotReady);
-                },
-                Ok(Async::Ready(None)) => {
-                    let cbn = serde_json::from_slice(&state.2)?;
-                    println!("{:?}", cbn);
-                    unimplemented!()
-                },
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(err) => return Err(err.into()),
-            },
-        };
-        println!("next {:?}", next_state);
-        mem::replace(&mut self.state, next_state);
-        Ok(result)
-    }
-}
+type NegotiationInner = Box<Future<Item=Client, Error=NegotiationError>>;
 
 error_chain! {
     types {

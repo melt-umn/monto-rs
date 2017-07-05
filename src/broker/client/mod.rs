@@ -135,7 +135,7 @@ pub struct ServeFuture<F: Future> {
     stop: F,
 }
 
-impl<F: Future> Future for ServeFuture<F> where F::Item: ::std::fmt::Debug, F::Error: ::std::fmt::Debug {
+impl<F: Future> Future for ServeFuture<F> {
     type Item = F::Item;
     type Error = F::Error;
 

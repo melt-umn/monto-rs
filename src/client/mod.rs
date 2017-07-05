@@ -71,7 +71,7 @@ impl Client {
             base_url.set_path(&path);
         }
 
-        let body = serde_json::to_string(&ClientNegotiation {
+        let cn = ClientNegotiation {
             monto: ProtocolVersion {
                 major: 3,
                 minor: 0,
@@ -79,7 +79,8 @@ impl Client {
             },
             client: config.version,
             extensions: BTreeSet::new(),
-        }).unwrap();
+        };
+        let body = serde_json::to_string(&cn).unwrap();
 
         let url = match base_url.join("version") {
             Ok(url) => url,
@@ -92,7 +93,7 @@ impl Client {
 
         let http = HttpClient::new(&handle);
         let future = http.request(req);
-        Negotiation::new(base_url, http, future)
+        Negotiation::new(base_url, http, cn, future)
     }
 
     /// Attempts to retrieve a Product from the Broker, as described in
