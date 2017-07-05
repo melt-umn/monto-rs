@@ -9,6 +9,7 @@ use hyper::client::FutureResponse;
 use serde_json;
 use url::{ParseError as UrlError, Url};
 
+use common::messages::ProtocolVersion;
 use super::{Client, HttpClient};
 use super::messages::{ClientNegotiation, ClientBrokerNegotiation};
 
@@ -29,8 +30,9 @@ impl Negotiation {
     }
 
     /// Creates a new instance of Negotiation that immediately returns an error.
-    pub(crate) fn err(err: NegotiationError) -> Negotiation {
-        unimplemented!()
+    pub(crate) fn err(error: NegotiationError) -> Negotiation {
+        use futures::future::err;
+        Negotiation { inner: Box::new(err(error)) }
     }
 
     fn negotiate(base_url: Url, http: HttpClient, cn: ClientNegotiation, cbn: ClientBrokerNegotiation) -> Result<Client, NegotiationError> {
@@ -40,7 +42,7 @@ impl Negotiation {
                 .collect();
             Ok(Client { base_url, http, services })
         } else {
-            unimplemented!()
+            Err(NegotiationErrorKind::NotCompatible(cn.monto, cbn.monto).into())
         }
     }
 }
@@ -70,13 +72,19 @@ error_chain! {
         /// A status other than Ok was received from the Broker, indicating
         /// that the Client is not compatible.
         BadStatus(code: StatusCode) {
-            description("The Broker and Client are not compatible")
-            display("The Broker and Client are not compatible: got {} from the Broker", code)
+            description("The Broker is not compatible with this Client")
+            display("The Broker is not compatible with this Client: got {} from the Broker", code)
         }
 
         /// The given config had an invalid broker location specified.
         BadConfigURL(err: UrlError) {
             description("The config was invalid")
+        }
+
+        /// The Client and Broker are not compatible.
+        NotCompatible(client: ProtocolVersion, broker: ProtocolVersion) {
+            description("The Broker and Client are not compatible")
+            display("The Broker (Monto version {}) and Client (Monto version {}) are not compatible.", broker, client)
         }
     }
 }
