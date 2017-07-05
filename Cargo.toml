@@ -8,6 +8,10 @@ version = "0.1.0"
 appveyor = { repository = "melt-umn/monto-rs" }
 travis-ci = { repository = "melt-umn/monto-rs" }
 
+[[bin]]
+name = "monto-list-products"
+path = "src/bin/list-products.rs"
+
 [dependencies]
 dirs = "^0.3.1"
 either = "^1.1.0"
