@@ -10,6 +10,7 @@ use std::str::FromStr;
 use regex::Regex;
 use semver::Version as SemverVersion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::{Error as JsonError, Value};
 
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
 ///
@@ -94,6 +95,13 @@ impl Serialize for Identifier {
 #[derive(Clone, Deserialize, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum Language {
+    /// JSON, as described by [RFC 7159](https://tools.ietf.org/html/rfc7159).
+    Json,
+
+    /// The language of directories, and any other Product that does not
+    /// inherently have a language.
+    None,
+
     /// A language not otherwise present in this enumeration.
     Other(String),
 }
@@ -102,6 +110,8 @@ impl Language {
     /// The name of the language, as a string.
     fn name(&self) -> &str {
         match *self {
+            Language::Json => "json",
+            Language::None => "none",
             Language::Other(ref name) => name,
         }
     }
@@ -147,22 +157,92 @@ impl Serialize for NamespacedName {
 /// Defined in
 /// [Section 3.1.3](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-3-product)
 /// of the specification.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Product<P: ProductValue> {
-    /// The value of the Product.
-    pub value: P,
+pub trait Product {
+    /// Deserializes the product.
+    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError>
+        where Self: Sized;
+
+    /// The language of the product.
+    fn language(&self) -> Language;
+
+    /// The name of the product.
+    fn name(&self) -> ProductName;
+
+    /// The path of the product.
+    fn path(&self) -> String;
+
+    /// The serialization of the Product.
+    fn value(&self) -> Value;
+}
+
+/// A generic product type, which can hold any Product.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GenericProduct {
+    /// The name of the Product.
+    pub name: ProductName,
 
     /// The language of the Product.
     pub language: Language,
 
     /// The path of the Product.
     pub path: String,
+
+    /// The contents of the Product.
+    pub value: Value
 }
+
+impl GenericProduct {
+    /// Converts a Product into a GenericProduct.
+    pub fn from_product<P: Product>(p: &P) -> GenericProduct {
+        GenericProduct {
+            language: p.language(),
+            name: p.name(),
+            path: p.path(),
+            value: p.value(),
+        }
+    }
+}
+
+impl Product for GenericProduct {
+    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
+        Ok(GenericProduct { name, language, path, value })
+    }
+    fn language(&self) -> Language { self.language.clone() }
+    fn name(&self) -> ProductName { self.name.clone() }
+    fn path(&self) -> String { self.path.clone() }
+    fn value(&self) -> Value { self.value.clone() }
+}
+
+// TODO: This may require specialization to be stabilized.
+/*
+impl<P: Product> From<P> for GenericProduct {
+    fn from(p: P) -> GenericProduct {
+        GenericProduct(p.name(),
+            p.language(),
+            p.path(),
+            p.value())
+    }
+}
+*/
 
 /// A Product's name and language.
 ///
 /// Defined in
-/// [Section 3.1.4](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-4-productidentifier)
+/// [Section 3.1.4](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-4-productdescriptor)
+/// of the specification.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProductDescriptor {
+    /// The name of the Product.
+    pub name: ProductName,
+
+    /// The language of the Product.
+    pub language: Language,
+}
+
+/// A Product's name, language, and path.
+///
+/// Defined in
+/// [Section 3.1.5](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-5-productidentifier)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProductIdentifier {
@@ -179,13 +259,16 @@ pub struct ProductIdentifier {
 /// The name of a Product.
 ///
 /// Defined in
-/// [Section 3.1.5](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-5-productname)
+/// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-6-productname)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum ProductName {
     /// A listing of a directory.
     Directory,
+
+    /// Syntactic or semantic errors detected in source code.
+    Errors,
 
     /// Source code.
     Source,
@@ -200,22 +283,17 @@ impl Display for ProductName {
 	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
             ProductName::Directory => write!(fmt, "directory"),
+            ProductName::Errors => write!(fmt, "errors"),
             ProductName::Source => write!(fmt, "source"),
             ProductName::Other(ref ident) => ident.fmt(fmt),
         }
 	}
 }
 
-/// A Product's value.
-pub trait ProductValue: for<'de> Deserialize<'de> + Serialize + Sized {
-    /// Returns the name of the Product.
-    fn name() -> ProductName;
-}
-
 /// The version number of the Client or Server Protocol.
 ///
 /// Defined in
-/// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-6-protocolversion)
+/// [Section 3.1.7](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-7-protocolversion)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ProtocolVersion {
@@ -279,7 +357,7 @@ impl PartialOrd for ProtocolVersion {
 /// The version and implementation of a Client, Broker, or Service.
 ///
 /// Defined in
-/// [Section 3.1.7](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-7-softwareversion)
+/// [Section 3.1.8](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-8-softwareversion)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SoftwareVersion {

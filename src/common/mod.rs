@@ -5,7 +5,7 @@ pub mod messages;
 pub mod products;
 
 use either::{Either, Left, Right};
-use futures::{Async, Future, Stream};
+use futures::{Future, Stream};
 use futures::future::{err, ok};
 use hyper::{Body, Response, StatusCode};
 use hyper::Error as HyperError;
@@ -43,4 +43,4 @@ pub fn json_response<T: Serialize>(t: T, status: StatusCode) -> Box<Future<Item=
         .with_header(ContentLength(res.len() as u64))
         .with_header(ContentType("application/json".parse().unwrap()))
         .with_body(res)))
-} 
+}

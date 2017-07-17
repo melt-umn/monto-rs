@@ -2,11 +2,13 @@
 
 use std::collections::BTreeSet;
 use std::net::SocketAddr;
+use std::path::Path;
 
 use url::Url;
 
 use client::messages::ClientExtension;
 use common::messages::{Identifier, SoftwareVersion};
+use service::messages::ServiceExtension;
 
 /// The Broker's configuration.
 ///
@@ -48,7 +50,7 @@ impl Config {
     /// Loads the configuration.
     ///
     /// The following directories are searched (in order) for a file called `monto-broker.toml`:
-    ///  
+    ///
     ///  - `.`
     ///  - Config home (`AppData\Roaming\monto-broker` / `~/Library/monto-broker` / `~/.config/monto-broker`)
     ///  - The home directory
@@ -61,55 +63,71 @@ impl Config {
     pub fn load() -> Config {
         use dirs::Directories;
         use std::env::home_dir;
-        use std::path::Path;
-    
-        fn load_one<P: AsRef<Path>>(dir: P) -> Option<Config> {
-            use std::fs::File;
-            use std::io::{ErrorKind, Read};
-            use toml::from_slice;
-    
-            // Build the path.
-            let path = dir.as_ref().join("monto-broker.toml");
-    
-            // Open the file.
-            let mut f = match File::open(&path) {
-                Ok(f) => f,
-                Err(err) => {
-                    if err.kind() != ErrorKind::NotFound {
-                        error!("Error opening config file `{}': {}", path.display(), err);
-                    }
-                    return None;
-                },
-            };
-    
-            // Create a buffer to store the file, and read the file into it.
-            let mut buf = Vec::new();
-            if let Err(err) = f.read_to_end(&mut buf) {
-                error!("Error reading config file `{}': {}", path.display(), err);
-                return None;
-            }
-    
-            // Convert the file's contents to the Config type and return.
-            match from_slice(&buf) {
-                Ok(config) => Some(config),
-                Err(err) => {
-                    error!("Error parsing config file `{}': {}", path.display(), err);
-                    None
-                },
-            }
-        }
-    
-        load_one(".").or_else(|| {
+
+        Config::load_one(".").or_else(|| {
             Directories::with_prefix("monto-broker", "monto-broker")
                 .ok()
                 .map(|dirs| dirs.config_home())
-                .and_then(load_one)
+                .and_then(Config::load_one)
         }).or_else(|| {
-            home_dir().and_then(load_one)
+            home_dir().and_then(Config::load_one)
         }).unwrap_or_else(|| {
             warn!("Could not open any configuration, using the default.");
-            Config::default() 
+            Config::default()
         })
+    }
+
+    /// Loads the config and parses command line arguments at the same time.
+    ///
+    /// Panics on invalid command-line arguments.
+    pub fn load_with_args(name: &str, version: &str) -> Config {
+        let matches = clap_app!((name) =>
+            (version: version)
+            (@arg CONFIG: --config +takes_value "The path to the config file.")
+        ).get_matches();
+        if let Some(config_path) = matches.value_of_os("CONFIG") {
+            Config::load_one(&config_path).unwrap_or_else(|| {
+                panic!("Failed to load config.")
+            })
+        } else {
+            Config::load()
+        }
+    }
+
+    fn load_one<P: AsRef<Path>>(dir: P) -> Option<Config> {
+        use std::fs::File;
+        use std::io::{ErrorKind, Read};
+        use toml::from_slice;
+
+        // Build the path.
+        let path = dir.as_ref().join("monto-broker.toml");
+
+        // Open the file.
+        let mut f = match File::open(&path) {
+            Ok(f) => f,
+            Err(err) => {
+                if err.kind() != ErrorKind::NotFound {
+                    error!("Error opening config file `{}': {}", path.display(), err);
+                }
+                return None;
+            },
+        };
+
+        // Create a buffer to store the file, and read the file into it.
+        let mut buf = Vec::new();
+        if let Err(err) = f.read_to_end(&mut buf) {
+            error!("Error reading config file `{}': {}", path.display(), err);
+            return None;
+        }
+
+        // Convert the file's contents to the Config type and return.
+        match from_slice(&buf) {
+            Ok(config) => Some(config),
+            Err(err) => {
+                error!("Error parsing config file `{}': {}", path.display(), err);
+                None
+            },
+        }
     }
 }
 
@@ -117,7 +135,7 @@ impl Config {
 ///
 /// ## Example
 /// ```toml
-/// TODO
+/// service_failure_is_fatal = true
 /// ```
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
@@ -150,7 +168,7 @@ pub struct ExtensionConfig {
     pub client: BTreeSet<ClientExtension>,
 
     /// Service Protocol Extensions that are available.
-    pub service: BTreeSet<ClientExtension>,
+    pub service: BTreeSet<ServiceExtension>,
 }
 
 /// The configuration for how the Broker serves to Clients.

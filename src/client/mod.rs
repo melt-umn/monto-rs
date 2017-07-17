@@ -18,7 +18,7 @@ use serde_json;
 use tokio_core::reactor::Handle;
 use url::Url;
 
-use common::messages::{Identifier, Language, Product, ProductIdentifier, ProductName, ProductValue, ProtocolVersion, SoftwareVersion};
+use common::messages::{Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
 use self::messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
 
@@ -28,7 +28,7 @@ type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;
 pub struct Client {
     base_url: Url,
     http: HttpClient,
-    services: BTreeMap<Identifier, BTreeSet<ProductIdentifier>>,
+    services: BTreeMap<Identifier, BTreeSet<ProductDescriptor>>,
 }
 
 impl Client {
@@ -99,7 +99,7 @@ impl Client {
     /// Attempts to retrieve a Product from the Broker, as described in
     /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-4-requesting-products)
     /// of the specification.
-    pub fn request<P: ProductValue>(&mut self, service: &Identifier, p: &ProductIdentifier) -> RequestFuture<P> {
+    pub fn request<P: Product>(&mut self, service: &Identifier, p: &ProductIdentifier) -> RequestFuture<P> {
         let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &p.path));
         RequestFuture::new(self.http.request(req))
     }
@@ -115,7 +115,7 @@ impl Client {
     /// Sends a Product to the Broker, as described in
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
     /// of the specification.
-    pub fn send_product<P: ProductValue>(&mut self, p: &Product<P>) -> SendFuture {
+    pub fn send_product<P: Product>(&mut self, p: &P) -> SendFuture {
         let _ = p;
         // let mut req = Request::new(Put, self.make_uri(None, &p.name, Some(&p.language), &p.path));
         unimplemented!()
@@ -164,10 +164,10 @@ impl Default for Config {
 /// TODO: This can be made more efficient when
 /// [`conservative_impl_trait`](https://github.com/rust-lang/rust/issues/34511)
 /// is stabilized.
-pub struct ProductsIter<'a>(Box<Iterator<Item=(&'a Identifier, &'a ProductIdentifier)> + 'a>); // TODO Don't use a trait object.
+pub struct ProductsIter<'a>(Box<Iterator<Item=(&'a Identifier, &'a ProductDescriptor)> + 'a>); // TODO Don't use a trait object.
 
 impl<'a> Iterator for ProductsIter<'a> {
-    type Item = (&'a Identifier, &'a ProductIdentifier);
+    type Item = (&'a Identifier, &'a ProductDescriptor);
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
     }
@@ -179,7 +179,7 @@ pub struct RequestFuture<P> {
     _phantom: PhantomData<P>,
 }
 
-impl<P: ProductValue> RequestFuture<P> {
+impl<P: Product> RequestFuture<P> {
     fn new(f: FutureResponse) -> RequestFuture<P> {
         RequestFuture {
             future: f,
@@ -188,8 +188,8 @@ impl<P: ProductValue> RequestFuture<P> {
     }
 }
 
-impl<P: ProductValue> Future for RequestFuture<P> {
-    type Item = Product<P>;
+impl<P: Product> Future for RequestFuture<P> {
+    type Item = P;
     type Error = BrokerGetError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {

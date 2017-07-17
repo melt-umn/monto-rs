@@ -1,0 +1,8 @@
+[package]
+name = "monto-json"
+description = "A Monto service for JSON parsing and highlighting."
+version = "0.1.0"
+authors = ["Nathaniel Ringo <remexre@gmail.com>"]
+
+[dependencies]
+monto = { path = ".." }

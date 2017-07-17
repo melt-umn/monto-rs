@@ -1,10 +1,10 @@
-extern crate futures;
+#[macro_use]
+extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate monto;
 extern crate simple_logger;
 extern crate tokio_core;
-extern crate toml;
 extern crate void;
 
 use log::LogLevel;
@@ -19,7 +19,7 @@ fn main() {
     simple_logger::init_with_level(LogLevel::Info).unwrap();
 
     // Load the configuration.
-    let config = Config::load();
+    let config = Config::load_with_args("monto-broker", crate_version!());
     info!("Using config {:?}", config);
 
     // Create the I/O loop.
