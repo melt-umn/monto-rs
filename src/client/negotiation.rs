@@ -1,10 +1,6 @@
-use std::mem;
-
-use either::{Either, Left, Right};
-use futures::{Async, Future, Poll, Stream};
-use futures::stream::Concat2;
+use futures::{Future, Poll, Stream};
 use hyper;
-use hyper::{Body, StatusCode};
+use hyper::StatusCode;
 use hyper::client::FutureResponse;
 use serde_json;
 use url::{ParseError as UrlError, Url};

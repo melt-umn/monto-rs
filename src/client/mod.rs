@@ -70,6 +70,7 @@ impl Client {
             let path = format!("{}/", base_url.path());
             base_url.set_path(&path);
         }
+        debug!("base_url is {}", base_url);
 
         let cn = ClientNegotiation {
             monto: ProtocolVersion {
@@ -174,7 +175,7 @@ impl<'a> Iterator for ProductsIter<'a> {
 }
 
 /// A Future for a Product being requested from the Broker.
-pub struct RequestFuture<P> {
+pub struct RequestFuture<P: Product> {
     future: FutureResponse,
     _phantom: PhantomData<P>,
 }

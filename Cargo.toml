@@ -1,5 +1,5 @@
 [workspace]
-members = ["monto-json"]
+members = ["monto-parenlang"]
 
 [package]
 authors = ["Nathaniel Ringo <remexre@gmail.com>"]

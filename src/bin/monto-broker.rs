@@ -15,7 +15,7 @@ use monto::broker::Broker;
 use monto::broker::config::Config;
 
 fn main() {
-    // Start logging, or die.
+    // Start logging.
     simple_logger::init_with_level(LogLevel::Info).unwrap();
 
     // Load the configuration.

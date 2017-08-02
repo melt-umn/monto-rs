@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Stress-tests the Broker for negotiations.
+
 set -eu
 
 function report() {

@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::io::Error as IoError;
 use std::net::SocketAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use url::Url;
 
@@ -16,20 +16,20 @@ error_chain! {
         /// A configuration file couldn't be found.
         CouldntFindConfig(path: PathBuf) {
             description("A configuration file couldn't be found")
-            display("A configuration file couldn't be found at {}", path)
+            display("A configuration file couldn't be found at {}", path.display())
         }
 
         /// A configuration file couldn't be parsed. The error is chained onto
         /// this one.
         BadConfig(path: PathBuf) {
             description("A configuration file couldn't be parsed")
-            display("The configuration file {} couldn't be parsed", path)
+            display("The configuration file {} couldn't be parsed", path.display())
         }
     }
 
     foreign_links {
-        Io(IoError, IoErrorKind)
-            #[doc = "A miscellaneous I/O error when trying to load a config file."];
+        Io(IoError)
+            #[doc = "An I/O error when trying to load a config file."];
     }
 }
 
@@ -64,32 +64,38 @@ impl Config {
     /// for a file called `NAME.toml`:
     ///
     ///  - `.`
-    ///  - Config home (`AppData\Roaming\NAME` / `~/Library/NAME` / `~/.config/NAME`)
+    ///  - Config home (`AppData\Roaming\NAME`, `~/Library/NAME`, or `~/.config/NAME`)
     ///  - The home directory
     ///
     /// If one cannot be found, the next is used instead. If none can be found,
     /// this function returns the last error it encountered instead.
-    pub fn load(name: &str) -> Result<Config, IoError> {
+    pub fn load(name: &str) -> Config {
         use dirs::Directories;
         use std::env::home_dir;
 
-        Config::load_one(".").or_else(|| {
-            Directories::with_prefix("monto-broker", "monto-broker")
-                .ok()
-                .map(|dirs| dirs.config_home())
-                .and_then(Config::load_one)
-        }).or_else(|| {
-            home_dir().and_then(Config::load_one)
-        }).unwrap_or_else(|| {
-            warn!("Could not open any configuration, using the default.");
-            Config::default()
-        })
+        match Config::load_one(".") {
+            Ok(c) => return c,
+            Err(e) => {
+                error!("Failed to load config from current directory: {}", e);
+                match Directories::with_prefix(name, name) {
+                    Ok(dirs) => match Config::load_one(dirs.config_home()) {
+                        Ok(c) => return c,
+                        Err(e) => error!("Failed to load config from config directory: {}", e),
+                    },
+                    Err(e) => {
+                        error!("Failed to find config directory: {}", e);
+                    },
+                }
+                warn!("Couldn't find config, loading defaults.");
+                Config::default()
+            },
+        }
     }
 
     /// Loads the config and parses command line arguments at the same time.
     ///
     /// Panics on invalid command-line arguments.
-    pub fn load_with_args(name: &str, version: &str) -> Result<Config, IoError> {
+    pub fn load_with_args(name: &str, version: &str) -> Result<Config> {
         let matches = clap_app!((name) =>
             (version: version)
             (@arg CONFIG: --config +takes_value "The path to the config file.")
@@ -97,11 +103,11 @@ impl Config {
         if let Some(config_path) = matches.value_of_os("CONFIG") {
             Config::load_one(&config_path)
         } else {
-            Config::load()
+            Ok(Config::load(name))
         }
     }
 
-    fn load_one<P: AsRef<Path>>(dir: P) -> Result<Config, IoError> {
+    fn load_one<P: AsRef<Path>>(dir: P) -> Result<Config> {
         use std::fs::File;
         use std::io::Read;
         use toml::from_slice;
@@ -110,17 +116,34 @@ impl Config {
         let path = dir.as_ref().join("monto-broker.toml");
 
         // Open the file.
-        let mut f = File::open(&path)?;
+        let mut f = File::open(&path)
+            .chain_err(|| ErrorKind::CouldntFindConfig(path.clone()))?;
 
         // Create a buffer to store the file, and read the file into it.
         let mut buf = Vec::new();
-        if let Err(err) = f.read_to_end(&mut buf) {
-            error!("Error reading config file `{}': {}", path.display(), err);
-            return None;
-        }
+        f.read_to_end(&mut buf)?;
 
         // Convert the file's contents to the Config type and return.
         from_slice(&buf)
+            .chain_err(|| ErrorKind::BadConfig(path))
+    }
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        let random = 0;
+        Config {
+            extensions: BTreeSet::new(),
+            net: NetConfig::default(),
+            version: SoftwareVersion {
+                id: format!("edu.umn.cs.melt.monto.servicelib.{:08x}", random).parse().unwrap(),
+                name: Some("Reference Implementation Service Library".to_owned()),
+                vendor: Some("Minnesota Extensible Language Tools".to_owned()),
+                major: 0,
+                minor: 0,
+                patch: 0,
+            },
+        }
     }
 }
 
