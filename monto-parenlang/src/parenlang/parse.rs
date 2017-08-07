@@ -1,5 +1,6 @@
 use super::{Ast, ParseError};
 
+/// Parses a single AST.
 pub fn one(c: &[char], i: &mut usize) -> Result<Ast, ParseError> {
     if *i >= c.len() {
         return Err(ParseError::UnexpectedEof(*i));
@@ -22,7 +23,12 @@ pub fn one(c: &[char], i: &mut usize) -> Result<Ast, ParseError> {
 #[test]
 fn success() {
     let mut i = 0;
-    let c = "foo".chars().collect::<Vec<_>>();
+    let c = "(()(()))".chars().collect::<Vec<_>>();
     let r = one(&c, &mut i);
-    unimplemented!()
+    assert_eq!(r, Ok(Ast(vec![
+        Ast(vec![]),
+        Ast(vec![
+            Ast(vec![]),
+        ]),
+    ])));
 }

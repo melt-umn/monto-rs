@@ -43,7 +43,7 @@ error_chain! {
 /// [net]
 /// addr = "[::]:28888"
 /// ```
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Config {
     /// Configuration for extensions to the Service protocol.
     #[serde(default)]
@@ -54,7 +54,8 @@ pub struct Config {
     pub net: NetConfig,
 
     /// Configuration on how the Service should report its version and implementation.
-    pub version: SoftwareVersion,
+    #[serde(default)]
+    pub version: VersionConfig,
 }
 
 impl Config {
@@ -73,12 +74,12 @@ impl Config {
         use dirs::Directories;
         use std::env::home_dir;
 
-        match Config::load_one(".") {
+        match Config::load_one(".", name) {
             Ok(c) => return c,
             Err(e) => {
                 error!("Failed to load config from current directory: {}", e);
                 match Directories::with_prefix(name, name) {
-                    Ok(dirs) => match Config::load_one(dirs.config_home()) {
+                    Ok(dirs) => match Config::load_one(dirs.config_home(), name) {
                         Ok(c) => return c,
                         Err(e) => error!("Failed to load config from config directory: {}", e),
                     },
@@ -101,19 +102,20 @@ impl Config {
             (@arg CONFIG: --config +takes_value "The path to the config file.")
         ).get_matches();
         if let Some(config_path) = matches.value_of_os("CONFIG") {
-            Config::load_one(&config_path)
+            Config::load_one(&config_path, name)
         } else {
             Ok(Config::load(name))
         }
     }
 
-    fn load_one<P: AsRef<Path>>(dir: P) -> Result<Config> {
+    fn load_one<P: AsRef<Path>>(dir: P, name: &str) -> Result<Config> {
         use std::fs::File;
         use std::io::Read;
         use toml::from_slice;
 
         // Build the path.
-        let path = dir.as_ref().join("monto-broker.toml");
+        let mut path = dir.as_ref().join(name);
+        path.set_extension("toml");
 
         // Open the file.
         let mut f = File::open(&path)
@@ -124,25 +126,16 @@ impl Config {
         f.read_to_end(&mut buf)?;
 
         // Convert the file's contents to the Config type and return.
-        from_slice(&buf)
-            .chain_err(|| ErrorKind::BadConfig(path))
+        from_slice(&buf).chain_err(|| ErrorKind::BadConfig(path))
     }
 }
 
 impl Default for Config {
     fn default() -> Config {
-        let random = 0;
         Config {
             extensions: BTreeSet::new(),
             net: NetConfig::default(),
-            version: SoftwareVersion {
-                id: format!("edu.umn.cs.melt.monto.servicelib.{:08x}", random).parse().unwrap(),
-                name: Some("Reference Implementation Service Library".to_owned()),
-                vendor: Some("Minnesota Extensible Language Tools".to_owned()),
-                major: 0,
-                minor: 0,
-                patch: 0,
-            },
+            version: VersionConfig::default(),
         }
     }
 }
@@ -154,7 +147,7 @@ impl Default for Config {
 /// ```toml
 /// addr = "0.0.0.0:28888"
 /// ```
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct NetConfig {
     /// The address to serve on. Defaults to `0.0.0.0:28888`.
@@ -169,5 +162,87 @@ impl Default for NetConfig {
         let addr = SocketAddrV4::new(addr, 28888);
         let addr = SocketAddr::V4(addr);
         NetConfig { addr }
+    }
+}
+
+#[test]
+fn netconfig() {
+    extern crate toml;
+
+    let example = r#"addr = "0.0.0.0:28888""#;
+    let nc: NetConfig = toml::from_str(example).unwrap();
+    assert_eq!(nc, NetConfig::default());
+}
+
+/// The configuration for a Service's reported version.
+///
+/// ## Example
+///
+/// ```toml
+/// id = "com.example.service"
+/// name = "Example Service"
+/// vendor = "ACME, Inc."
+/// major = 1
+/// minor = 0
+/// patch = 0
+/// ```
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct VersionConfig {
+    /// The ID of the Broker.
+    ///
+    /// Defaults to "edu.umn.cs.melt.monto_rs.broker".
+    pub id: Identifier,
+
+    /// The name of the Broker.
+    ///
+    /// Defaults to "Reference Implementation Broker".
+    pub name: String,
+
+    /// The vendor of the Broker.
+    ///
+    /// Defaults to "Minnesota Extensible Language Tools".
+    pub vendor: String,
+
+    /// The major version of the Broker.
+    ///
+    /// Defaults to 0.
+    pub major: u64,
+
+    /// The minor version of the Broker.
+    ///
+    /// Defaults to 0.
+    pub minor: u64,
+
+    /// The patch version of the Broker.
+    ///
+    /// Defaults to 0.
+    pub patch: u64,
+}
+
+impl Default for VersionConfig {
+    fn default() -> VersionConfig {
+        let random = 0; // TODO
+        VersionConfig {
+            id: format!("edu.umn.cs.melt.monto.servicelib.{:08x}", random).parse().unwrap(),
+            name: "Reference Implementation Service Library".to_owned(),
+            vendor: "Minnesota Extensible Language Tools".to_owned(),
+            major: 0,
+            minor: 0,
+            patch: 0,
+        }
+    }
+}
+
+impl From<VersionConfig> for SoftwareVersion {
+    fn from(config: VersionConfig) -> SoftwareVersion {
+        SoftwareVersion {
+            id: config.id,
+            name: Some(config.name),
+            vendor: Some(config.vendor),
+            major: config.major,
+            minor: config.minor,
+            patch: config.patch,
+        }
     }
 }

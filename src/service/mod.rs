@@ -42,7 +42,7 @@ impl Service {
                 patch: 0,
             },
             products: self.funcs.keys().cloned().collect(),
-            service: self.config.version.clone(),
+            service: self.config.version.clone().into(),
         }
     }
 

@@ -1,2 +1,10 @@
 [net]
 addr = "127.0.0.1:28889"
+
+[version]
+id = "edu.umn.cs.melt.monto.parenlang"
+name = "Example Monto Service for the Language of Balanced Parentheses"
+vendor = "Minnesota Extensible Language Tools"
+major = 0
+minor = 0
+patch = 0

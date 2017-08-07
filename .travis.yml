@@ -10,11 +10,11 @@ matrix:
   fast_finish: true
 
 script:
-- cargo build
-- cargo test
+- cargo build --all
+- cargo test --all
 
 before_deploy:
-- cargo build --release
+- cargo build --release --all
 - mkdir staging
 - TODO
 deploy:

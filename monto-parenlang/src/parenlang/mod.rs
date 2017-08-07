@@ -3,10 +3,22 @@
 
 mod parse;
 
+use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 use std::str::FromStr;
 
 /// The abstract syntax tree.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Ast(pub Vec<Ast>);
+
+impl Display for Ast {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        fmt.write_char('(')?;
+        for ast in &self.0 {
+            write!(fmt, "{}", ast)?
+        }
+        fmt.write_char(')')
+    }
+}
 
 impl FromStr for Ast {
     type Err = ParseError;
