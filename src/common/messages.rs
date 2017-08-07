@@ -173,6 +173,15 @@ pub trait Product {
 
     /// The serialization of the Product.
     fn value(&self) -> Value;
+
+    /// Gets a Product's ProductIdentifier.
+    fn identifier(&self) -> ProductIdentifier {
+        ProductIdentifier {
+            language: self.language(),
+            name: self.name(),
+            path: self.path(),
+        }
+    }
 }
 
 /// A generic product type, which can hold any Product.
@@ -288,6 +297,19 @@ impl Display for ProductName {
             ProductName::Other(ref ident) => ident.fmt(fmt),
         }
 	}
+}
+
+impl FromStr for ProductName {
+    type Err = <Identifier as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "directory" => Ok(ProductName::Directory),
+            "errors" => Ok(ProductName::Errors),
+            "source" => Ok(ProductName::Source),
+            _ => s.parse().map(ProductName::Other),
+        }
+    }
 }
 
 /// The version number of the Client or Server Protocol.

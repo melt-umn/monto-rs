@@ -24,7 +24,7 @@ pub struct Directory {
 
 impl Product for Directory {
     fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
-        assert_eq!(name, ProductName::Source); // TODO Real error handling...
+        assert_eq!(name, ProductName::Directory); // TODO Real error handling...
         assert_eq!(language, Language::None); // TODO Real error handling...
         Ok(Directory {
             path,
@@ -32,7 +32,7 @@ impl Product for Directory {
         })
     }
     fn language(&self) -> Language { Language::None }
-    fn name(&self) -> ProductName { ProductName::Source }
+    fn name(&self) -> ProductName { ProductName::Directory }
     fn path(&self) -> String { self.path.clone() }
     fn value(&self) -> Value { unimplemented!() }
 }
@@ -108,7 +108,7 @@ impl Product for Errors {
         })
     }
     fn language(&self) -> Language { Language::None }
-    fn name(&self) -> ProductName { ProductName::Source }
+    fn name(&self) -> ProductName { ProductName::Errors }
     fn path(&self) -> String { self.path.clone() }
     fn value(&self) -> Value { unimplemented!() }
 }

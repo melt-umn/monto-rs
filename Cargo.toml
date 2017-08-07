@@ -20,6 +20,7 @@ name = "monto-list-products"
 path = "src/bin/list-products.rs"
 
 [dependencies]
+ansi_term = "^0.9.0"
 clap = "^2.25.0"
 dirs = "^0.3.1"
 either = "^1.1.0"
