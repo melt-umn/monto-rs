@@ -37,7 +37,6 @@ fn main() {
     service.add_provider(DepthProvider);
 
     // Run the service forever.
-    info!("asdf");
     let err = match core.run(service.serve_forever()) {
         Ok(void) => unreachable(void),
         Err(Left(void)) => unreachable(void),

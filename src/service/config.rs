@@ -81,7 +81,18 @@ impl Config {
                 match Directories::with_prefix(name, name) {
                     Ok(dirs) => match Config::load_one(dirs.config_home(), name) {
                         Ok(c) => return c,
-                        Err(e) => error!("Failed to load config from config directory: {}", e),
+                        Err(e) => {
+                            error!("Failed to load config from config directory: {}", e);
+                            match home_dir() {
+                                Some(home_dir) => match Config::load_one(home_dir, name) {
+                                    Ok(c) => return c,
+                                    Err(e) => {
+                                        error!("Failed to load config from home directory: {}", e);
+                                    },
+                                },
+                                None => error!("Could not identify home directory"),
+                            }
+                        },
                     },
                     Err(e) => {
                         error!("Failed to find config directory: {}", e);

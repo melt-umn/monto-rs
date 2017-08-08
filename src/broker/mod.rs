@@ -31,7 +31,7 @@ impl Broker {
     pub fn new(config: Config, handle: Handle) -> Box<Future<Item=Broker, Error=ServiceConnectError>> {
         let futures = config.service.clone()
             .into_iter()
-            .map(|s| Service::connect(s, &handle))
+            .map(|s| Service::connect(&config, s, &handle))
             .collect::<Vec<_>>();
         Box::new(join_all(futures).map(|services| {
             Broker { config, handle, services }

@@ -1,17 +1,21 @@
 //! The Service Protocol side of the Broker.
 
+use std::cmp::min;
 use std::collections::BTreeSet;
 
-use futures::{Future, Poll};
-use hyper::{Body, Client, Error as HyperError, StatusCode};
+use futures::{Future, Poll, Stream};
+use futures::future::{err, ok, result};
+use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request, StatusCode};
 use hyper::client::HttpConnector;
 use hyper::error::UriError;
+use serde::{Deserialize, Serialize};
+use serde_json;
 use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;
 
-use broker::config::ServiceConfig;
+use broker::config::{Config, ServiceConfig};
 use common::messages::ProtocolVersion;
-use service::messages::{ServiceExtension, ServiceNegotiation};
+use service::messages::{ServiceExtension, ServiceBrokerNegotiation, ServiceNegotiation};
 
 /// A connection from the Broker to a Service.
 pub struct Service {
@@ -32,12 +36,51 @@ pub struct Service {
 
 impl Service {
     /// Initiates a connection to the Service.
-    pub fn connect(config: ServiceConfig, handle: &Handle) -> Box<Future<Item=Service, Error=ServiceConnectError>> {
+    pub fn connect(config: &Config, service_config: ServiceConfig, handle: &Handle) -> Box<Future<Item=Service, Error=ServiceConnectError>> {
         let client = Client::new(handle);
-        let version_url = format!("{}://{}{}/version", config.scheme, config.addr, config.base).parse()
+        let version_uri = format!("{}://{}{}/version", service_config.scheme,
+                service_config.addr, service_config.base)
+            .parse()
             .expect("TODO Proper error handling");
-        Box::new(client.get(version_url).map_err(ServiceConnectError::from).map(|res| {
-            unimplemented!()
+        let mut request = Request::new(Method::Post, version_uri);
+        let our_version = ProtocolVersion {
+            major: 3,
+            minor: 0,
+            patch: 0,
+        };
+        let sbn = ServiceBrokerNegotiation {
+            monto: our_version,
+            broker: config.version.clone().into(),
+            extensions: config.extensions.service.clone(),
+        };
+        match serde_json::to_string(&sbn) {
+            Ok(sbn) => request.set_body(sbn),
+            Err(e) => return Box::new(err(e.into())),
+        }
+        Box::new(client.request(request).map_err(ServiceConnectError::from).and_then(|res| {
+            match res.status() {
+                StatusCode::Ok => {
+                    res.body()
+                        .concat2()
+                        .map_err(ServiceConnectError::from)
+                },
+                _ => panic!("TODO Error handling"),
+            }
+        }).and_then(|body: Chunk| {
+            result(serde_json::from_slice(body.as_ref()))
+                .map_err(ServiceConnectError::from)
+        }).and_then(move |sn: ServiceNegotiation| {
+            let version = min(our_version, sn.monto);
+            let extensions = config.extensions.service.intersection(&sn.extensions)
+                .cloned()
+                .collect();
+            ok(Service {
+                client,
+                config: service_config,
+                extensions,
+                negotiation: sn,
+                protocol: version,
+            })
         }))
     }
 }
