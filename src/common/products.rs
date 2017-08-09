@@ -31,6 +31,10 @@ impl Product for Directory {
             entries: unimplemented!(),
         })
     }
+    fn to_json(&self) -> Result<Value, JsonError> {
+        unimplemented!()
+    }
+
     fn language(&self) -> Language { Language::None }
     fn name(&self) -> ProductName { ProductName::Directory }
     fn path(&self) -> String { self.path.clone() }
@@ -107,6 +111,10 @@ impl Product for Errors {
             path,
         })
     }
+    fn to_json(&self) -> Result<Value, JsonError> {
+        unimplemented!()
+    }
+
     fn language(&self) -> Language { Language::None }
     fn name(&self) -> ProductName { ProductName::Errors }
     fn path(&self) -> String { self.path.clone() }
@@ -172,6 +180,10 @@ impl Product for Source {
             path,
         })
     }
+    fn to_json(&self) -> Result<Value, JsonError> {
+        unimplemented!()
+    }
+
     fn language(&self) -> Language { self.language.clone() }
     fn name(&self) -> ProductName { ProductName::Source }
     fn path(&self) -> String { self.path.clone() }

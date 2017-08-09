@@ -4,6 +4,7 @@
 //!
 //! `monto-list-products [BROKER-ADDRESS]`
 
+extern crate itertools;
 extern crate log;
 extern crate monto;
 extern crate simple_logger;
@@ -13,6 +14,7 @@ use std::env::args;
 use std::fmt::Display;
 use std::process::exit;
 
+use itertools::Itertools;
 use log::LogLevel;
 use tokio_core::reactor::Core;
 
@@ -43,8 +45,19 @@ fn main() {
     // Connect to the Broker and list products.
     let client_handle = core.handle();
     let client = must(core.run(Client::new(config, client_handle)));
-    for (ident, desc) in client.products() {
-        println!("{}: {:?}", ident, desc);
+    let products = client.products()
+        .map(|(i, d)| (i.to_string(), d.language.to_string(), d.name.to_string()))
+        .sorted()
+        .into_iter()
+        .group_by(|&(ref s, _, _)| s.clone());
+    for (service, rest) in products.into_iter() {
+        println!("{}", service);
+        for (lang, rest) in rest.group_by(|&(_, ref l, _)| l.clone()).into_iter() {
+            println!("\t{}", lang);
+            for (_, _, product) in rest {
+                println!("\t\t{}", product);
+            }
+        }
     }
 }
 

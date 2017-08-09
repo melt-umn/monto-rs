@@ -162,6 +162,9 @@ pub trait Product {
     fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError>
         where Self: Sized;
 
+    /// Serializes the product.
+    fn to_json(&self) -> Result<Value, JsonError>;
+
     /// The language of the product.
     fn language(&self) -> Language;
 
@@ -216,23 +219,15 @@ impl Product for GenericProduct {
     fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
         Ok(GenericProduct { name, language, path, value })
     }
+    fn to_json(&self) -> Result<Value, JsonError> {
+        unimplemented!()
+    }
+
     fn language(&self) -> Language { self.language.clone() }
     fn name(&self) -> ProductName { self.name.clone() }
     fn path(&self) -> String { self.path.clone() }
     fn value(&self) -> Value { self.value.clone() }
 }
-
-// TODO: This may require specialization to be stabilized.
-/*
-impl<P: Product> From<P> for GenericProduct {
-    fn from(p: P) -> GenericProduct {
-        GenericProduct(p.name(),
-            p.language(),
-            p.path(),
-            p.value())
-    }
-}
-*/
 
 /// A Product's name and language.
 ///

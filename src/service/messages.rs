@@ -4,7 +4,7 @@
 
 use std::collections::BTreeSet;
 
-use common::messages::{GenericProduct, ProductDescriptor, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
+use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
 
 /// The Message that a Broker sends to a Service during version negotiation.
 ///
@@ -96,7 +96,19 @@ pub enum ServiceError {
     Other(String),
 }
 
-// TODO ServiceProduct
+/// A response containing a Product from a Service to be returned the Broker.
+///
+/// Defined in
+/// [Section 5.4.5](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-5-serviceproduct)
+/// of the specification.
+#[derive(Clone, Debug)]
+pub struct ServiceProduct<P: Product> {
+    /// The product sent.
+    pub product: P,
+
+    /// Any notices generated.
+    pub notices: Vec<ServiceNotice>,
+}
 
 /// A message from a Broker to the Service signalling a non-error special condition.
 ///

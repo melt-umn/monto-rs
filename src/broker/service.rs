@@ -18,6 +18,7 @@ use common::messages::ProtocolVersion;
 use service::messages::{ServiceExtension, ServiceBrokerNegotiation, ServiceNegotiation};
 
 /// A connection from the Broker to a Service.
+#[derive(Debug)]
 pub struct Service {
     /// The configuration for connecting to the Service.
     pub config: ServiceConfig,
@@ -36,7 +37,7 @@ pub struct Service {
 
 impl Service {
     /// Initiates a connection to the Service.
-    pub fn connect(config: &Config, service_config: ServiceConfig, handle: &Handle) -> Box<Future<Item=Service, Error=ServiceConnectError>> {
+    pub fn connect(config: Config, service_config: ServiceConfig, handle: &Handle) -> Box<Future<Item=Service, Error=ServiceConnectError>> {
         let client = Client::new(handle);
         let version_uri = format!("{}://{}{}/version", service_config.scheme,
                 service_config.addr, service_config.base)

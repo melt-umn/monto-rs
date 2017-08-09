@@ -1,8 +1,8 @@
 use itertools::partition;
 
-use monto::common::messages::{Language, Product, ProductDescriptor, ProductName};
+use monto::common::messages::{GenericProduct, Language, Product, ProductDescriptor, ProductIdentifier, ProductName};
 use monto::service::ServiceProvider;
-use monto::service::messages::{ServiceErrors, ServiceNotice};
+use monto::service::messages::{ServiceError, ServiceErrors, ServiceNotice, ServiceProduct};
 
 use parenlang::Ast;
 
@@ -17,7 +17,7 @@ impl ServiceProvider for DepthProvider {
         }
     }
 
-    fn service(&mut self, path: &str, mut products: Vec<Box<Product>>) -> (Result<Box<Product>, ServiceErrors>, Vec<ServiceNotice>) {
+    fn service(&mut self, path: &str, mut products: Vec<Box<Product>>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors> {
         let language = Language::Other("balanced-parens".to_string());
         let idx = products.iter().position(|p| {
             !(p.name() == ProductName::Source && p.language() == language && p.path() == path)
@@ -27,14 +27,26 @@ impl ServiceProvider for DepthProvider {
             let src = products.swap_remove(idx);
             Ok(unimplemented!())
         } else {
-            unimplemented!()
+            Err(ServiceError::UnmetDependency(ProductIdentifier {
+                name: ProductName::Source,
+                language: Language::Other("balanced-parens".to_string()),
+                path: path.to_string(),
+            }))
         };
         let notices = products.into_iter()
             .map(|p| p.identifier())
             .map(ServiceNotice::UnusedDependency)
             .collect();
-
-        (r, notices)
+        match r {
+            Ok(product) => Ok(ServiceProduct {
+                product,
+                notices,
+            }),
+            Err(err) => Err(ServiceErrors {
+                errors: vec![err],
+                notices,
+            }),
+        }
     }
 }
 
