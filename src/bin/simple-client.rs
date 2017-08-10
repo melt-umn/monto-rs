@@ -82,7 +82,7 @@ fn main() {
         ("fetch", Some(m)) => fetch(m, client),
         ("list", Some(m)) => list(m, client),
         _ => {
-            error!("{}", matches.usage());
+            eprintln!("{}", matches.usage());
             exit(1);
         },
     }
