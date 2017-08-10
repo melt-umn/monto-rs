@@ -3,7 +3,7 @@ extern crate itertools;
 #[macro_use]
 extern crate log;
 extern crate monto;
-extern crate simple_logger;
+extern crate pretty_logger;
 extern crate tokio_core;
 extern crate void;
 
@@ -11,7 +11,6 @@ mod depth;
 mod parenlang;
 
 use either::{Left, Right};
-use log::LogLevel;
 use tokio_core::reactor::Core;
 use void::unreachable;
 
@@ -22,7 +21,7 @@ use depth::DepthProvider;
 
 fn main() {
     // Start the logger.
-    simple_logger::init_with_level(LogLevel::Info).unwrap();
+    pretty_logger::init_to_defaults().unwrap();
 
     // Create the main I/O loop.
     let mut core = Core::new()

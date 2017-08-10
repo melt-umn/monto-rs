@@ -3,11 +3,10 @@ extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate monto;
-extern crate simple_logger;
+extern crate pretty_logger;
 extern crate tokio_core;
 extern crate void;
 
-use log::LogLevel;
 use tokio_core::reactor::Core;
 use void::{ResultVoidExt, unreachable};
 
@@ -16,7 +15,7 @@ use monto::broker::config::Config;
 
 fn main() {
     // Start logging.
-    simple_logger::init_with_level(LogLevel::Info).unwrap();
+    pretty_logger::init_to_defaults().unwrap();
 
     // Load the configuration.
     let config = Config::load_with_args("monto-broker", crate_version!());
