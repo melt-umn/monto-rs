@@ -64,8 +64,10 @@ impl Service for Client {
 
     fn call(&self, req: Request) -> Self::Future {
         let (method, uri, _, _, body) = req.deconstruct();
-        Box::new(match (method.clone(), uri.path()) {
-            (Method::Post, "/monto/version") => {
+        let path_str = uri.path().to_string();
+        let path = uri.path().split("/").collect::<Vec<_>>();
+        Box::new(match (method.clone(), &path) {
+            (Method::Post, path) if path == &["", "monto", "version"] => {
                 // Make a reference to the Broker, which we move into the and_then closure.
                 let broker = self.0.clone();
 
@@ -110,6 +112,14 @@ impl Service for Client {
                     }
                 }))
             },
+            (Method::Put, path) if path.len() == 4 && path[0] == "" && path[1] == "monto" && path[2] == "broker" => {
+                unimplemented!()
+            },
+            (Method::Get, path) if path.len() == 4 && path[0] == "" && path[1] == "monto" => {
+                let service_id = path[2].parse().expect("TODO Error handling");
+                let product_type = path[3].parse().expect("TODO Error handling");
+                unimplemented!()
+            },
             _ => error_response(StatusCode::NotFound),
         }.map(move |r| {
             let status = r.status();
@@ -120,7 +130,7 @@ impl Service for Client {
             } else {
                 LogLevel::Info
             };
-            log!(level, "{} {} {}", u16::from(r.status()), method, uri.path());
+            log!(level, "{} {} {}", u16::from(r.status()), method, path_str);
             r
         }))
     }

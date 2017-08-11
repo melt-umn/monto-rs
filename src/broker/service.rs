@@ -14,7 +14,7 @@ use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;
 
 use broker::config::{Config, ServiceConfig};
-use common::messages::ProtocolVersion;
+use common::messages::{Product, ProductIdentifier, ProtocolVersion};
 use service::messages::{ServiceExtension, ServiceBrokerNegotiation, ServiceNegotiation};
 
 /// A connection from the Broker to a Service.
@@ -83,6 +83,11 @@ impl Service {
                 protocol: version,
             })
         }))
+    }
+
+    /// Requests a product from the Service.
+    pub fn request<P: Product + 'static>(&self, identifier: &ProductIdentifier) -> Box<Future<Item=P, Error=()>> {
+        unimplemented!()
     }
 }
 
