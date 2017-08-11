@@ -123,6 +123,16 @@ impl Display for Language {
 	}
 }
 
+impl From<String> for Language {
+    fn from(s: String) -> Language {
+        match s.as_ref() {
+            "json" => Language::Json,
+            "none" => Language::None,
+            _ => Language::Other(s),
+        }
+    }
+}
+
 /// A name after a dotted identifier.
 ///
 /// Defined in

@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate futures;
 extern crate itertools;
 #[macro_use]
 extern crate log;
@@ -11,12 +12,13 @@ use std::fmt::Display;
 use std::process::exit;
 
 use clap::ArgMatches;
+use futures::Future;
 use itertools::Itertools;
 use log::LogLevelFilter;
 use tokio_core::reactor::Core;
 
 use monto::client::{Client, Config};
-use monto::common::messages::SoftwareVersion;
+use monto::common::messages::{GenericProduct, Identifier, ProductIdentifier, SoftwareVersion};
 
 fn main() {
     // Parse CLI arguments.
@@ -79,8 +81,8 @@ fn main() {
 
     // Delegate to the appropriate function.
     match matches.subcommand() {
-        ("fetch", Some(m)) => fetch(m, client),
-        ("list", Some(m)) => list(m, client),
+        ("fetch", Some(m)) => fetch(m, client, core),
+        ("list", Some(m)) => list(m, client, core),
         _ => {
             eprintln!("{}", matches.usage());
             exit(1);
@@ -98,11 +100,32 @@ fn must<T, E: Display>(r: Result<T, E>) -> T {
     }
 }
 
-fn fetch(_args: &ArgMatches, _client: Client) {
-    unimplemented!()
+fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
+    // Get the arguments as strings.
+    let service = args.value_of("service").unwrap();
+    let product = args.value_of("product").unwrap();
+    let language = args.value_of("language").unwrap();
+    let path = args.value_of("path").unwrap();
+    let sources = args.values_of("sources")
+        .unwrap()
+        .collect::<Vec<_>>();
+
+    // Parse the arguments.
+    let service = must(service.parse().map_err(|()| format!("{} is not a valid identifier", service)));
+    let product = must(product.parse().map_err(|()| format!("{} is not a valid identifier", product)));
+
+    // Request the product.
+    let p: GenericProduct = must(core.run(client.request(&service, &ProductIdentifier {
+        name: product,
+        language: language.to_string().into(),
+        path: path.to_string(),
+    })));
+
+    // TODO Print fancier.
+    println!("{:?}", p);
 }
 
-fn list(_args: &ArgMatches, client: Client) {
+fn list(_args: &ArgMatches, client: Client, _core: Core) {
     let products = client.products()
         .map(|(i, d)| (i.to_string(), d.language.to_string(), d.name.to_string()))
         .sorted()

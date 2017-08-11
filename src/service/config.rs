@@ -5,9 +5,6 @@ use std::io::Error as IoError;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 
-use url::Url;
-
-use client::messages::ClientExtension;
 use common::messages::{Identifier, SoftwareVersion};
 use super::messages::ServiceExtension;
 

@@ -3,6 +3,8 @@
 //! of the specification.
 
 use std::collections::BTreeSet;
+use std::error::Error;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use common::messages::{Identifier, ProtocolVersion, SoftwareVersion, NamespacedName};
 use service::messages::ServiceNegotiation;
@@ -66,6 +68,22 @@ pub enum BrokerPutError {
     NoLanguage,
 }
 
+impl Display for BrokerPutError {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        match *self {
+            BrokerPutError::NoLanguage => fmt.write_str("No language was provided, and it could not be detected by the Broker."),
+        }
+    }
+}
+
+impl Error for BrokerPutError {
+    fn description(&self) -> &str {
+        match *self {
+            BrokerPutError::NoLanguage => "No language was provided, and it could not be detected by the Broker.",
+        }
+    }
+}
+
 /// An error that occurs during the requesting of a product by a Client.
 ///
 /// Defined in
@@ -97,4 +115,32 @@ pub enum BrokerGetError {
         /// The error that occurred, as described by the Broker.
         error: String,
     },
+}
+
+impl Display for BrokerGetError {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        match *self {
+            BrokerGetError::NoSuchService => fmt.write_str("A Product was requested from a nonexistent Service"),
+            BrokerGetError::NoSuchProduct => fmt.write_str("A Product was requested that the Service does not expose"),
+            BrokerGetError::ServiceError {
+                ref service,
+                ref error,
+            } => write!(fmt, "From service {}: {}", service, error),
+            BrokerGetError::ServiceConnectError {
+                ref service,
+                ref error,
+            } => write!(fmt, "When connecting to service {}: {}", service, error),
+        }
+    }
+}
+
+impl Error for BrokerGetError {
+    fn description(&self) -> &str {
+        match *self {
+            BrokerGetError::NoSuchService => "A Product was requested from a nonexistent Service",
+            BrokerGetError::NoSuchProduct => "A Product was requested that the Service does not expose",
+            BrokerGetError::ServiceError { .. } => "An error from a service",
+            BrokerGetError::ServiceConnectError { .. } => "An error trying to connect to a Service",
+        }
+    }
 }

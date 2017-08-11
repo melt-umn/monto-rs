@@ -8,8 +8,10 @@ mod negotiation;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::marker::PhantomData;
+use std::path::Path;
 
-use futures::{Future, Poll};
+use either::Either;
+use futures::{Future, Poll, Stream};
 use hyper;
 use hyper::{Get, Post, Request, Uri};
 use hyper::client::FutureResponse;
@@ -18,7 +20,7 @@ use serde_json;
 use tokio_core::reactor::Handle;
 use url::Url;
 
-use common::messages::{Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
+use common::messages::{GenericProduct, Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
 use self::messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
 
@@ -49,7 +51,7 @@ impl Client {
         if let Some(language) = language {
             url.query_pairs_mut().append_pair("language", &language.to_string());
         }
-        unimplemented!()
+        url.into_string().parse().unwrap()
     }
 
     /// Creates a new Client running on the given event loop with the given
@@ -100,9 +102,21 @@ impl Client {
     /// Attempts to retrieve a Product from the Broker, as described in
     /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-4-requesting-products)
     /// of the specification.
-    pub fn request<P: Product>(&mut self, service: &Identifier, p: &ProductIdentifier) -> RequestFuture<P> {
+    pub fn request<P: Product + 'static>(&mut self, service: &Identifier, p: &ProductIdentifier) -> Box<Future<Item=P, Error=RequestError>> {
         let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &p.path));
-        RequestFuture::new(self.http.request(req))
+        info!("Requesting product {:?} from {}", p, service);
+        Box::new(self.http.request(req)
+            .and_then(|res| {
+                warn!("{:?}", res);
+                res.body().concat2()
+            })
+            .map_err(RequestError::from)
+            .and_then(|body| {
+                warn!("{:?}", body);
+                serde_json::from_slice(body.as_ref())
+                    .and_then(|gp: GenericProduct| P::from_json(gp.name, gp.language, gp.path, gp.value))
+                    .map_err(RequestError::from)
+            }))
     }
 
     /// Returns an iterator over the Products that can be requested by the Client.
@@ -113,11 +127,15 @@ impl Client {
         ProductsIter(Box::new(iter))
     }
 
+    /// Sends a `source` Product to the Broker.
+    pub fn send_file<P: AsRef<Path>>(&mut self, path: P) -> Box<Future<Item=(), Error=SendError>> {
+        unimplemented!()
+    }
+
     /// Sends a Product to the Broker, as described in
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
     /// of the specification.
-    pub fn send_product<P: Product>(&mut self, p: &P) -> SendFuture {
-        let _ = p;
+    pub fn send_product<P: Product>(&mut self, p: &P) -> Box<Future<Item=(), Error=SendError>> {
         // let mut req = Request::new(Put, self.make_uri(None, &p.name, Some(&p.language), &p.path));
         unimplemented!()
     }
@@ -174,38 +192,30 @@ impl<'a> Iterator for ProductsIter<'a> {
     }
 }
 
-/// A Future for a Product being requested from the Broker.
-pub struct RequestFuture<P: Product> {
-    future: FutureResponse,
-    _phantom: PhantomData<P>,
-}
-
-impl<P: Product> RequestFuture<P> {
-    fn new(f: FutureResponse) -> RequestFuture<P> {
-        RequestFuture {
-            future: f,
-            _phantom: PhantomData,
-        }
+error_chain! {
+    types {
+        RequestError, RequestErrorKind, RequestResultExt;
+    }
+    foreign_links {
+        Broker(BrokerGetError)
+            #[doc = "An error from the Broker."];
+        Hyper(::hyper::Error)
+            #[doc = "An error connecting to the Broker."];
+        Json(serde_json::Error)
+            #[doc = "An invalid response (bad JSON) was received from the Broker."];
     }
 }
 
-impl<P: Product> Future for RequestFuture<P> {
-    type Item = P;
-    type Error = BrokerGetError;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        unimplemented!()
+error_chain! {
+    types {
+        SendError, SendErrorKind, SendResultExt;
     }
-}
-
-/// A Future for a Product being sent to the Broker.
-pub struct SendFuture();
-
-impl Future for SendFuture {
-    type Item = ();
-    type Error = BrokerPutError;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        unimplemented!()
+    foreign_links {
+        Broker(BrokerPutError)
+            #[doc = "An error from the Broker."];
+        Hyper(::hyper::Error)
+            #[doc = "An error connecting to the Broker."];
+        Json(serde_json::Error)
+            #[doc = "An invalid response (bad JSON) was received from the Broker."];
     }
 }
