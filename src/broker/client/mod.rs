@@ -3,24 +3,33 @@
 //! TODO: This whole module needs a rusty axe and some lighter fluid applied to
 //! it.
 
+mod negotiation;
+mod req_products;
+mod send_products;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use either::{Left, Right};
+use either::{Either, Left, Right};
 use futures::{Async, Future, Poll, Stream};
 use futures::future::{Empty, empty, err};
-use hyper::{Body, Method, Request, Response, StatusCode};
-use hyper::Error as HyperError;
+use hyper::{Body, Error as HyperError, Method, Request, Response, StatusCode};
+use hyper::header::ContentType;
 use hyper::server::{Http, Service};
 use log::LogLevel;
+use serde_json::Error as JsonError;
 use tokio_core::net::{Incoming, TcpListener};
 use tokio_core::reactor::Handle;
+use url::Url;
+use url::form_urlencoded::parse as parse_query;
 use void::Void;
 
 use broker::Broker;
 use client::messages::{ClientNegotiation, ClientBrokerNegotiation};
 use common::{error_response, json_request, json_response};
-use common::messages::ProtocolVersion;
+use common::messages::{GenericProduct, Language, ProductIdentifier, ProtocolVersion};
+
+type BoxedFuture = Box<Future<Item=Response, Error=Either<HyperError, JsonError>>>;
 
 impl Broker {
     /// Returns a Future that will resolve once the given Future resolves,
@@ -54,6 +63,7 @@ impl Broker {
     }
 }
 
+#[derive(Clone)]
 struct Client(Rc<RefCell<Broker>>);
 
 impl Service for Client {
@@ -63,65 +73,58 @@ impl Service for Client {
     type Future = Box<Future<Item=Response<Body>, Error=HyperError>>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let (method, uri, _, _, body) = req.deconstruct();
+        let (method, uri, _, headers, body) = req.deconstruct();
         let path_str = uri.path().to_string();
+        let mut query_pairs = parse_query(uri.query().unwrap_or("").as_bytes());
         let path = uri.path().split("/").collect::<Vec<_>>();
-        Box::new(match (method.clone(), &path) {
+        let f: BoxedFuture = match (method.clone(), &path) {
             (Method::Post, path) if path == &["", "monto", "version"] => {
-                // Make a reference to the Broker, which we move into the and_then closure.
-                let broker = self.0.clone();
-
-                // Deserialize the body, then...
-                Box::new(json_request(body).and_then(move |cn: ClientNegotiation| {
-                    // Log that we got the client negotiation message.
-                    debug!("Got ClientNegotiation {:?}", cn);
-
-                    // Build a response.
-                    let cbn = {
-                        let broker = broker.borrow();
-                        ClientBrokerNegotiation {
-                            monto: ProtocolVersion {
-                                major: 3,
-                                minor: 0,
-                                patch: 0,
-                            },
-                            broker: broker.config.version.clone().into(),
-                            extensions: broker.config.extensions.client.clone(),
-                            services: broker.services.iter().map(|s| s.negotiation.clone()).collect(),
-                        }
-                    };
-
-                    // Check for compatibility.
-                    let status = if cbn.monto.compatible(&cn.monto) {
-                        StatusCode::Ok
-                    } else {
-                        StatusCode::BadRequest
-                    };
-
-                    // Send the response.
-                    json_response(cbn, status)
-                }).or_else(|e| {
-                    // Log the error.
-                    error!("{}", e);
-
-                    match e {
-                        // If it's a Hyper error, just pass it along.
-                        Left(e) => Box::new(err(e)),
-                        // If it's serde's though, transform it into a 500.
-                        Right(_) => error_response(StatusCode::InternalServerError)
-                    }
-                }))
+                let client = self.clone();
+                Box::new(json_request(body).and_then(move |cn| client.negotiation(cn)))
             },
             (Method::Put, path) if path.len() == 4 && path[0] == "" && path[1] == "monto" && path[2] == "broker" => {
-                unimplemented!()
+                let pt = path[3].parse().expect("TODO Error handling");
+                let pp = query_pairs.find(|&(ref k, _)| k == "path")
+                    .map(|(_, v)| v.into_owned())
+                    .expect("TODO Error handling");
+                let language = query_pairs.find(|&(ref k, _)| k == "language")
+                    .map(|(_, v)| v.into_owned())
+                    .map(Language::from);
+                let content_type: ContentType = headers.get()
+                    .map(Clone::clone)
+                    .unwrap_or_else(ContentType::json);
+                let client = self.clone();
+                Box::new(json_request(body).and_then(move |p| client.send_products(pt, pp, language, p)))
             },
             (Method::Get, path) if path.len() == 4 && path[0] == "" && path[1] == "monto" => {
                 let service_id = path[2].parse().expect("TODO Error handling");
                 let product_type = path[3].parse().expect("TODO Error handling");
-                unimplemented!()
+                let product_path = query_pairs.find(|&(ref k, _)| k == "path")
+                    .map(|(_, v)| v.into_owned())
+                    .expect("TODO Error handling");
+                let language = query_pairs.find(|&(ref k, _)| k == "language")
+                    .map(|(_, v)| v.into_owned())
+                    .map(Language::from)
+                    .expect("TODO Error handling");
+                Box::new(self.clone().req_products(service_id, ProductIdentifier {
+                    language,
+                    name: product_type,
+                    path: product_path,
+                }))
             },
-            _ => error_response(StatusCode::NotFound),
-        }.map(move |r| {
+            _ => Box::new(error_response(StatusCode::NotFound).map_err(Left)),
+        };
+        Box::new(f.or_else(|e| {
+            // Log the error.
+            error!("{}", e);
+
+            match e {
+                // If it's a Hyper error, just pass it along.
+                Left(e) => Box::new(err(e)),
+                // If it's serde's though, transform it into a 500.
+                Right(_) => error_response(StatusCode::InternalServerError)
+            }
+        }).map(move |r| {
             let status = r.status();
             let level = if status.is_server_error() || status.is_strange_status() {
                 LogLevel::Error

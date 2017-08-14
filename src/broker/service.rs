@@ -3,7 +3,8 @@
 use std::cmp::min;
 use std::collections::BTreeSet;
 
-use futures::{Future, Poll, Stream};
+use either::Either;
+use futures::{Future, Stream};
 use futures::future::{err, ok, result};
 use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request, StatusCode};
 use hyper::client::HttpConnector;
@@ -86,7 +87,7 @@ impl Service {
     }
 
     /// Requests a product from the Service.
-    pub fn request<P: Product + 'static>(&self, identifier: &ProductIdentifier) -> Box<Future<Item=P, Error=()>> {
+    pub fn request<P: Product + 'static>(&self, identifier: &ProductIdentifier) -> Box<Future<Item=P, Error=RequestError>> {
         unimplemented!()
     }
 }
@@ -94,6 +95,34 @@ impl Service {
 error_chain! {
     types {
         ServiceConnectError, ServiceConnectErrorKind, ServiceConnectResultExt;
+    }
+    foreign_links {
+        Hyper(HyperError)
+            #[doc = "An error from the network."];
+        Serde(JsonError)
+            #[doc = "An invalid response was received."];
+        Uri(UriError)
+            #[doc = "An invalid URI was created from the config"];
+    }
+    errors {
+        /// A status other than Ok was received from the Broker, indicating
+        /// that the Client is not compatible.
+        BadStatus(code: StatusCode) {
+            description("The Broker is not compatible with this Client")
+            display("The Broker is not compatible with this Client: got {} from the Broker", code)
+        }
+
+        /// The Broker and Service are not compatible.
+        NotCompatible(broker: ProtocolVersion, service: ProtocolVersion) {
+            description("The Broker and Service are not compatible")
+            display("The Broker (Monto version {}) and Service (Monto version {}) are not compatible.", broker, service)
+        }
+    }
+}
+
+error_chain! {
+    types {
+        RequestError, RequestErrorKind, RequestResultExt;
     }
     foreign_links {
         Hyper(HyperError)

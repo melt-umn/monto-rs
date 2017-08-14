@@ -4,13 +4,15 @@ pub mod client;
 pub mod config;
 pub mod service;
 
-use futures::{Async, BoxFuture, Future, Poll};
-use futures::future::{JoinAll, join_all};
-use hyper::{Body, Client};
+use futures::Future;
+use futures::future::join_all;
 use tokio_core::reactor::Handle;
 
+use client::messages::ClientBrokerNegotiation;
+use common::messages::{Identifier, ProtocolVersion, SoftwareVersion};
 use self::config::Config;
 use self::service::{Service, ServiceConnectError};
+use service::messages::ServiceBrokerNegotiation;
 
 /// The Broker.
 pub struct Broker {
@@ -37,5 +39,47 @@ impl Broker {
             info!("Connected to all services: {:?}", services);
             Broker { config, handle, services }
         }))
+    }
+
+    /// Returns the service with the given id, if one exists.
+    pub fn find_service(&self, id: &Identifier) -> Option<&Service> {
+        for service in self.services.iter() {
+            if &service.negotiation.service.id == id {
+                return Some(service);
+            }
+        }
+        None
+    }
+
+    /// Creates a ClientBrokerNegotiation.
+    pub fn client_negotiation(&self) -> ClientBrokerNegotiation {
+        ClientBrokerNegotiation {
+            monto: ProtocolVersion {
+                major: 3,
+                minor: 0,
+                patch: 0,
+            },
+            broker: self.version(),
+            extensions: self.config.extensions.client.clone(),
+            services: self.services.iter().map(|s| s.negotiation.clone()).collect(),
+        }
+    }
+
+    /// Creates a ServiceBrokerNegotiation.
+    pub fn service_negotiation(&self) -> ServiceBrokerNegotiation {
+        ServiceBrokerNegotiation {
+            monto: ProtocolVersion {
+                major: 3,
+                minor: 0,
+                patch: 0,
+            },
+            extensions: self.config.extensions.service.clone(),
+            broker: self.version(),
+        }
+    }
+
+    /// Returns the version information for the Broker.
+    pub fn version(&self) -> SoftwareVersion {
+        self.config.version.clone().into()
     }
 }
