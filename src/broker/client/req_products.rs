@@ -13,7 +13,8 @@ impl Client {
     pub fn req_products(self, service_id: Identifier, product: ProductIdentifier) -> BoxedFuture {
         let broker = self.0.borrow();
         if let Some(service) = broker.find_service(&service_id) {
-            Box::new(service.request(&product).then(move |r: Result<GenericProduct, RequestError>| {
+            let products_in: Vec<GenericProduct> = vec![]; // TODO Products
+            Box::new(service.request(product, products_in).then(move |r: Result<GenericProduct, RequestError>| {
                 match r {
                     Ok(p) => json_response(p, StatusCode::Ok),
                     Err(err) => match err.kind() {

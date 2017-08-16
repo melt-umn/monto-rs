@@ -16,6 +16,7 @@ extern crate itertools;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+extern crate notify;
 extern crate regex;
 extern crate semver;
 extern crate serde;

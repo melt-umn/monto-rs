@@ -9,14 +9,15 @@ use futures::future::{err, ok, result};
 use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request, StatusCode};
 use hyper::client::HttpConnector;
 use hyper::error::UriError;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;
 
 use broker::config::{Config, ServiceConfig};
-use common::messages::{Product, ProductIdentifier, ProtocolVersion};
-use service::messages::{ServiceExtension, ServiceBrokerNegotiation, ServiceNegotiation};
+use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier, ProtocolVersion};
+use service::messages::{BrokerRequest, ServiceExtension, ServiceBrokerNegotiation, ServiceErrors, ServiceNegotiation};
 
 /// A connection from the Broker to a Service.
 #[derive(Debug)]
@@ -87,8 +88,51 @@ impl Service {
     }
 
     /// Requests a product from the Service.
-    pub fn request<P: Product + 'static>(&self, identifier: &ProductIdentifier) -> Box<Future<Item=P, Error=RequestError>> {
-        unimplemented!()
+    pub fn request<In: Product, Out: Product + 'static>(&self, identifier: ProductIdentifier, products: Vec<In>) -> Box<Future<Item=Out, Error=RequestError>> {
+        let service_uri = format!("{}://{}{}/service", self.config.scheme,
+                self.config.addr, self.config.base)
+            .parse()
+            .expect("TODO Proper error handling");
+        let mut request = Request::new(Method::Post, service_uri);
+        let products: Vec<GenericProduct> = products.iter()
+            .map(GenericProduct::from_product)
+            .collect();
+        let br = BrokerRequest {
+            request: identifier,
+            products,
+        };
+        match serde_json::to_string(&br) {
+            Ok(br) => request.set_body(br),
+            Err(e) => return Box::new(err(e.into())),
+        }
+        Box::new(self.client.request(request)
+            .map_err(RequestError::from)
+            .and_then(|res| {
+                let status = res.status();
+                res.body()
+                    .concat2()
+                    .map(move |c| (status, c))
+                    .map_err(RequestError::from)
+            }).and_then(|(status, body)| result(match status {
+                StatusCode::Ok => {
+                    serde_json::from_slice(body.as_ref())
+                        .map_err(RequestError::from)
+                },
+                StatusCode::BadRequest => {
+                    serde_json::from_slice(body.as_ref())
+                        .map_err(RequestError::from)
+                        .and_then(|pd| Err(RequestErrorKind::NotExposed(pd).into()))
+                },
+                StatusCode::InternalServerError => {
+                    serde_json::from_slice(body.as_ref())
+                        .map_err(RequestError::from)
+                        .and_then(|ses| Err(RequestErrorKind::ServiceErrors(ses).into()))
+                },
+                _ => panic!("TODO Proper error handling"),
+            })).and_then(|gp: GenericProduct| {
+                gp.into_product()
+                    .map_err(RequestError::from)
+            }))
     }
 }
 
@@ -133,17 +177,15 @@ error_chain! {
             #[doc = "An invalid URI was created from the config"];
     }
     errors {
-        /// A status other than Ok was received from the Broker, indicating
-        /// that the Client is not compatible.
-        BadStatus(code: StatusCode) {
-            description("The Broker is not compatible with this Client")
-            display("The Broker is not compatible with this Client: got {} from the Broker", code)
+        /// The given product is not exposed by the service.
+        NotExposed(desc: ProductDescriptor) {
+            description("The given product is not exposed by the service")
+            display("The product {} for language {} is not exposed by the service", desc.name, desc.language)
         }
-
-        /// The Broker and Service are not compatible.
-        NotCompatible(broker: ProtocolVersion, service: ProtocolVersion) {
-            description("The Broker and Service are not compatible")
-            display("The Broker (Monto version {}) and Service (Monto version {}) are not compatible.", broker, service)
+        /// Errors sent from the service.
+        ServiceErrors(errors: ServiceErrors) {
+            description("Errors sent from the service")
+            display("Errors sent from the service: {:?}", errors.errors.iter().format(", "))
         }
     }
 }

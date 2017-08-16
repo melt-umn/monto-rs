@@ -223,6 +223,12 @@ impl GenericProduct {
             value: p.value(),
         }
     }
+
+    /// Converts a GenericProduct into a Product.
+    pub fn into_product<P: Product>(self) -> Result<P, JsonError> {
+        let GenericProduct { name, language, path, value } = self;
+        P::from_json(name, language, path, value)
+    }
 }
 
 impl Product for GenericProduct {
@@ -253,6 +259,15 @@ pub struct ProductDescriptor {
     pub language: Language,
 }
 
+impl From<ProductIdentifier> for ProductDescriptor {
+    fn from(p: ProductIdentifier) -> ProductDescriptor {
+        ProductDescriptor {
+            name: p.name,
+            language: p.language,
+        }
+    }
+}
+
 /// A Product's name, language, and path.
 ///
 /// Defined in
@@ -268,6 +283,16 @@ pub struct ProductIdentifier {
 
     /// The path of the Product.
     pub path: String,
+}
+
+impl<'a, P: Product> From<&'a P> for ProductIdentifier {
+    fn from(p: &'a P) -> ProductIdentifier {
+        ProductIdentifier {
+            name: p.name(),
+            language: p.language(),
+            path: p.path(),
+        }
+    }
 }
 
 /// The name of a Product.

@@ -61,5 +61,5 @@ pub trait ServiceProvider {
     fn descriptor(&self) -> ProductDescriptor;
 
     /// The function that actually runs the service.
-    fn service(&mut self, path: &str, products: Vec<Box<Product>>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors>;
+    fn service(&mut self, path: &str, products: Vec<GenericProduct>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors>;
 }

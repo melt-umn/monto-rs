@@ -13,7 +13,8 @@ use tokio_core::reactor::Handle;
 use void::Void;
 
 use common::{error_response, json_request, json_response};
-use service::messages::ServiceBrokerNegotiation;
+use common::messages::ProductDescriptor;
+use service::messages::{BrokerRequest, ServiceBrokerNegotiation};
 use super::Service;
 
 impl Service {
@@ -49,7 +50,7 @@ impl HyperService for Broker {
 
     fn call(&self, req: Request) -> Self::Future {
         let (method, uri, _, _, body) = req.deconstruct();
-        Box::new(match (method.clone(), uri.path()) {
+        let f: Box<Future<Item=_, Error=HyperError>> = match (method.clone(), uri.path()) {
             (Method::Post, "/monto/version") => {
                 let service = self.0.clone();
                 Box::new(json_request(body).and_then(move |sbn: ServiceBrokerNegotiation| {
@@ -73,8 +74,36 @@ impl HyperService for Broker {
                     }
                 }))
             },
-            _ => error_response(StatusCode::NotFound),
-        }.map(move |r| {
+            (Method::Post, "/monto/service") => {
+                let service = self.0.clone();
+                Box::new(json_request(body).and_then(move |br: BrokerRequest| {
+                    debug!("Got BrokerRequest {:?}", br);
+                    let BrokerRequest { request, products } = br;
+                    let descriptor: ProductDescriptor = request.clone().into();
+                    let mut service = service.borrow_mut();
+                    if let Some(provider) = service.funcs.get_mut(&descriptor) {
+                        match provider.service(&request.path, products) {
+                            Ok(sp) => json_response(sp, StatusCode::Ok),
+                            Err(errs) => json_response(errs, StatusCode::InternalServerError),
+                        }
+                    } else {
+                        json_response(request, StatusCode::BadRequest)
+                    }
+                }).or_else(|e| {
+                    // Log the error.
+                    error!("{}", e);
+
+                    match e {
+                        // If it's a Hyper error, just pass it along.
+                        Left(e) => Box::new(err(e)),
+                        // If it's serde's though, transform it into a 500.
+                        Right(_) => error_response(StatusCode::InternalServerError)
+                    }
+                }))
+            },
+            _ => error_response(StatusCode::NotFound)
+        };
+        Box::new(f.map(move |r: Response| {
             let status = r.status();
             let level = if status.is_server_error() || status.is_strange_status() {
                 LogLevel::Error

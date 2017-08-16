@@ -101,7 +101,7 @@ pub enum ServiceError {
 /// Defined in
 /// [Section 5.4.5](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-5-serviceproduct)
 /// of the specification.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ServiceProduct<P: Product> {
     /// The product sent.
     pub product: P,

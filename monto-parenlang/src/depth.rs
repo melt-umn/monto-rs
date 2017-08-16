@@ -17,7 +17,7 @@ impl ServiceProvider for DepthProvider {
         }
     }
 
-    fn service(&mut self, path: &str, mut products: Vec<Box<Product>>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors> {
+    fn service(&mut self, path: &str, mut products: Vec<GenericProduct>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors> {
         let language = Language::Other("balanced-parens".to_string());
         let idx = products.iter().position(|p| {
             !(p.name() == ProductName::Source && p.language() == language && p.path() == path)
