@@ -19,6 +19,7 @@ impl Client {
                     BrokerGetError::NoSuchProduct => StatusCode::BadRequest,
                     BrokerGetError::ServiceError { .. } => StatusCode::InternalServerError,
                     BrokerGetError::ServiceConnectError { .. } => StatusCode::BadGateway,
+                    BrokerGetError::Unresolvable(_) => StatusCode::InternalServerError,
                 };
                 json_response(err, status)
             },

@@ -4,6 +4,8 @@
 
 set -eu
 
+cd "$(dirname "${BASH_SOURCE}")"
+
 BUILD_TYPE="${1:-debug}";
 
 if [[ "${BUILD_TYPE}" = "release" ]]; then

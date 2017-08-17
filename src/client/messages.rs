@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use common::messages::{Identifier, ProtocolVersion, SoftwareVersion, NamespacedName};
+use common::messages::{Identifier, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
 use service::messages::ServiceNegotiation;
 
 /// The Message that a Client sends to a Broker during version negotiation.
@@ -115,6 +115,9 @@ pub enum BrokerGetError {
         /// The error that occurred, as described by the Broker.
         error: String,
     },
+
+    /// A dependency was unresolvable.
+    Unresolvable(ProductIdentifier),
 }
 
 impl Display for BrokerGetError {
@@ -130,6 +133,7 @@ impl Display for BrokerGetError {
                 ref service,
                 ref error,
             } => write!(fmt, "When connecting to service {}: {}", service, error),
+            BrokerGetError::Unresolvable(ref pi) => write!(fmt, "A product was unresolvable: {:?}", pi),
         }
     }
 }
@@ -141,6 +145,7 @@ impl Error for BrokerGetError {
             BrokerGetError::NoSuchProduct => "A Product was requested that the Service does not expose",
             BrokerGetError::ServiceError { .. } => "An error from a service",
             BrokerGetError::ServiceConnectError { .. } => "An error trying to connect to a Service",
+            BrokerGetError::Unresolvable(_) => "A product was unresolvable",
         }
     }
 }

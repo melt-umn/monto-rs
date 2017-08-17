@@ -12,8 +12,9 @@ use std::path::Path;
 
 use either::Either;
 use futures::{Future, Poll, Stream};
+use futures::future::result;
 use hyper;
-use hyper::{Get, Post, Request, Uri};
+use hyper::{Get, Post, Request, StatusCode, Uri};
 use hyper::client::FutureResponse;
 use hyper::header::{ContentLength, ContentType};
 use serde_json;
@@ -106,16 +107,29 @@ impl Client {
         let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &p.path));
         info!("Requesting product {:?} from {}", p, service);
         Box::new(self.http.request(req)
-            .and_then(|res| {
-                warn!("{:?}", res);
-                res.body().concat2()
-            })
             .map_err(RequestError::from)
-            .and_then(|body| {
-                warn!("{:?}", body);
-                serde_json::from_slice(body.as_ref())
-                    .and_then(|gp: GenericProduct| P::from_json(gp.name, gp.language, gp.path, gp.value))
+            .and_then(|res| {
+                let status = res.status();
+                res.body()
+                    .concat2()
+                    .map(move |b| (b, status))
                     .map_err(RequestError::from)
+            })
+            .and_then(|(body, status)| {
+                result(match status {
+                    StatusCode::Ok => {
+                        serde_json::from_slice(body.as_ref())
+                            .and_then(|gp: GenericProduct| P::from_json(gp.name, gp.language, gp.path, gp.value))
+                            .map_err(RequestError::from)
+                    },
+                    _ => {
+                        let e = RequestError::from(match serde_json::from_slice(body.as_ref()) {
+                            Ok(bge) => RequestErrorKind::Broker(bge),
+                            Err(err) => RequestErrorKind::Json(err),
+                        });
+                        Err(e)
+                    },
+                })
             }))
     }
 

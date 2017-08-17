@@ -83,7 +83,7 @@ impl Client {
             self.resolve(si, pi, vec![])
         } else {
             // TODO This should be a unique type of error.
-            Box::new(err(BrokerGetError::NoSuchService))
+            Box::new(err(BrokerGetError::Unresolvable(pi)))
         }
     }
 

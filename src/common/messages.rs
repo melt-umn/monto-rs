@@ -303,6 +303,9 @@ impl<'a, P: Product> From<&'a P> for ProductIdentifier {
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum ProductName {
+    /// A vendor-specific product.
+    Other(Identifier),
+
     /// A listing of a directory.
     Directory,
 
@@ -312,10 +315,7 @@ pub enum ProductName {
     /// Source code.
     Source,
 
-    // TODO built-in product types
-
-    /// A vendor-specific product.
-    Other(Identifier),
+    // TODO other built-in product types
 }
 
 impl Display for ProductName {

@@ -84,9 +84,13 @@ impl HyperService for Broker {
                     if let Some(provider) = service.funcs.get_mut(&descriptor) {
                         match provider.service(&request.path, products) {
                             Ok(sp) => json_response(sp, StatusCode::Ok),
-                            Err(errs) => json_response(errs, StatusCode::InternalServerError),
+                            Err(errs) => {
+                                error!("{:?}", errs);
+                                json_response(errs, StatusCode::InternalServerError)
+                            },
                         }
                     } else {
+                        warn!("Couldn't find a provider for {:?}", descriptor);
                         json_response(request, StatusCode::BadRequest)
                     }
                 }).or_else(|e| {
