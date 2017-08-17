@@ -43,7 +43,7 @@ fn main() {
     ).get_matches();
 
     // Start logging.
-    let log_level = 3 - matches.occurrences_of("quiet") + matches.occurrences_of("verbose");
+    let log_level = 3 - matches.occurrences_of("verbose") + matches.occurrences_of("quiet");
     pretty_logger::init_level(match log_level {
         0 => LogLevelFilter::Off,
         1 => LogLevelFilter::Trace,
@@ -112,20 +112,21 @@ fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
     let product = must(product.parse().map_err(|()| format!("{} is not a valid identifier", product)));
 
     // Send the sources.
-    for source in args.values_of("sources").unwrap() {
+    for source in args.values_of("sources").unwrap_or_default() {
         info!("Sending source {}", source);
         must(core.run(client.send_file(source, language.clone())));
     }
 
     // Request the product.
-    let p: GenericProduct = must(core.run(client.request(&service, &ProductIdentifier {
+    let pi = ProductIdentifier {
         name: product,
         language: language.to_string().into(),
         path: path.to_string(),
-    })));
+    };
+    let p: GenericProduct = must(core.run(client.request(&service, &pi)));
 
-    // TODO Print fancier.
-    println!("{:?}", p);
+    // Print the returned value.
+    println!("{}", p.value);
 }
 
 fn list(_args: &ArgMatches, client: Client, _core: Core) {

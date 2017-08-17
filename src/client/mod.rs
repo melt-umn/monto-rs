@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::marker::PhantomData;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use either::Either;
 use futures::{Future, Poll, Stream};
@@ -107,7 +107,18 @@ impl Client {
     /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-4-requesting-products)
     /// of the specification.
     pub fn request<P: Product + 'static>(&mut self, service: &Identifier, p: &ProductIdentifier) -> Box<Future<Item=P, Error=RequestError>> {
-        let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &p.path));
+        let path: &Path = p.path.as_ref();
+        let path = if path.is_absolute() {
+            path.to_owned()
+        } else {
+            match path.canonicalize() {
+                Ok(path) => path,
+                Err(e) => return Box::new(err(e.into())),
+            }
+        };
+        let path = path.display().to_string();
+
+        let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &path));
         info!("Requesting product {:?} from {}", p, service);
         Box::new(self.http.request(req)
             .map_err(RequestError::from)
@@ -146,10 +157,17 @@ impl Client {
 
     /// Sends a `source` Product to the Broker.
     pub fn send_file<P: AsRef<Path>>(&mut self, path: P, language: Language) -> Box<Future<Item=(), Error=SendError>> {
-        let path_str = path.as_ref()
-            .display()
-            .to_string();
-        let src = match File::open(path) {
+        let path = path.as_ref();
+        let path = if path.is_absolute() {
+            path.to_owned()
+        } else {
+            match path.canonicalize() {
+                Ok(path) => path,
+                Err(e) => return Box::new(err(e.into())),
+            }
+        };
+
+        let src = match File::open(&path) {
             Ok(mut file) => {
                 let mut buf = String::new();
                 file.read_to_string(&mut buf)
@@ -164,7 +182,7 @@ impl Client {
         self.send_product(&Source {
             contents: src,
             language,
-            path: path_str,
+            path: path.display().to_string(),
         })
     }
 
@@ -172,7 +190,17 @@ impl Client {
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
     /// of the specification.
     pub fn send_product<P: Product>(&mut self, p: &P) -> Box<Future<Item=(), Error=SendError>> {
-        let path = p.path();
+        let path = PathBuf::from(p.path());
+        let path = if path.is_absolute() {
+            path
+        } else {
+            match path.canonicalize() {
+                Ok(path) => path,
+                Err(e) => return Box::new(err(e.into())),
+            }
+        };
+        let path = path.display().to_string();
+
         let body = match serde_json::to_string(&p.value()) {
             Ok(body) => body,
             Err(e) => return Box::new(err(SendError::from(e))),
@@ -262,6 +290,8 @@ error_chain! {
             #[doc = "An error from the Broker."];
         Hyper(::hyper::Error)
             #[doc = "An error connecting to the Broker."];
+        Io(::std::io::Error)
+            #[doc = "An I/O error."];
         Json(serde_json::Error)
             #[doc = "An invalid response (bad JSON) was received from the Broker."];
     }
