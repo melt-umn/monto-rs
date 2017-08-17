@@ -23,7 +23,7 @@ impl Display for Ast {
 impl FromStr for Ast {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let chars = s.chars().collect::<Vec<_>>();
+        let chars = s.trim().chars().collect::<Vec<_>>();
         let mut idx = 0;
         let ast = parse::one(&chars, &mut idx)?;
         if idx == chars.len() {

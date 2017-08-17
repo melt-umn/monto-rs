@@ -1,9 +1,9 @@
 extern crate either;
 extern crate itertools;
-#[macro_use]
 extern crate log;
 extern crate monto;
 extern crate pretty_logger;
+extern crate serde_json;
 extern crate tokio_core;
 extern crate void;
 

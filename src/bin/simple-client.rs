@@ -12,13 +12,12 @@ use std::fmt::Display;
 use std::process::exit;
 
 use clap::ArgMatches;
-use futures::Future;
 use itertools::Itertools;
 use log::LogLevelFilter;
 use tokio_core::reactor::Core;
 
 use monto::client::{Client, Config};
-use monto::common::messages::{GenericProduct, Identifier, ProductIdentifier, SoftwareVersion};
+use monto::common::messages::{GenericProduct, Language, ProductIdentifier, SoftwareVersion};
 
 fn main() {
     // Parse CLI arguments.
@@ -104,15 +103,19 @@ fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
     // Get the arguments as strings.
     let service = args.value_of("service").unwrap();
     let product = args.value_of("product").unwrap();
-    let language = args.value_of("language").unwrap();
+    let language: Language = args.value_of("language").unwrap()
+        .to_string().into();
     let path = args.value_of("path").unwrap();
-    let sources = args.values_of("sources")
-        .unwrap()
-        .collect::<Vec<_>>();
 
     // Parse the arguments.
     let service = must(service.parse().map_err(|()| format!("{} is not a valid identifier", service)));
     let product = must(product.parse().map_err(|()| format!("{} is not a valid identifier", product)));
+
+    // Send the sources.
+    for source in args.values_of("sources").unwrap() {
+        info!("Sending source {}", source);
+        must(core.run(client.send_file(source, language.clone())));
+    }
 
     // Request the product.
     let p: GenericProduct = must(core.run(client.request(&service, &ProductIdentifier {

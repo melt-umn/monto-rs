@@ -26,7 +26,7 @@ impl Client {
         } else {
             if let Some(service) = broker.find_service(&si) {
                 Box::new(service.request(pi.clone(), &ps).then(move |r| match r {
-                    Ok(gp) => Box::new(ok(gp)),
+                    Ok(sp) => Box::new(ok(sp.product)),
                     Err(RequestError(e, _)) => {
                         error!("{}", e);
                         match e {
@@ -71,18 +71,21 @@ impl Client {
     fn resolve_dep(self, pi: ProductIdentifier) -> Box<Future<Item=GenericProduct, Error=BrokerGetError>> {
         let service = {
             let broker = self.0.borrow();
-            let pd = ProductDescriptor {
-                name: pi.name.clone(),
-                language: pi.language.clone(),
-            };
-            broker.services.iter()
-                .find(|s| s.negotiation.products.contains(&pd))
-                .map(|s| s.negotiation.service.id.clone())
+            if let Some(gp) = broker.from_cache(pi.clone()) {
+                return Box::new(ok(gp));
+            } else {
+                let pd = ProductDescriptor {
+                    name: pi.name.clone(),
+                    language: pi.language.clone(),
+                };
+                broker.services.iter()
+                    .find(|s| s.negotiation.products.contains(&pd))
+                    .map(|s| s.negotiation.service.id.clone())
+            }
         };
         if let Some(si) = service {
             self.resolve(si, pi, vec![])
         } else {
-            // TODO This should be a unique type of error.
             Box::new(err(BrokerGetError::Unresolvable(pi)))
         }
     }

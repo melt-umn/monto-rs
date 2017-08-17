@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 use std::time::Duration;
 
-use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, Watcher as NotifyWatcher};
+use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, RecursiveMode, Watcher as NotifyWatcher};
 use serde_json::Value;
 use tokio_core::reactor::Handle;
 
@@ -51,7 +51,19 @@ impl Cache {
     /// Adds a product to the cache, replacing any other product that was
     /// previously present.
     pub fn add(&mut self, product: GenericProduct) {
-        unimplemented!()
+        let GenericProduct { name, language, path, value } = product;
+        info!("Added to cache: {} {} {}", name, language, path);
+
+        let desc = ProductDescriptor { name, language };
+        let path = PathBuf::from(path);
+        self.products.entry(path.clone())
+            .or_insert_with(BTreeMap::new)
+            .insert(desc, value);
+        if self.watching.insert(path.clone()) {
+            if let Err(err) = self.watcher.watch(path, RecursiveMode::Recursive) {
+                error!("{}", err);
+            }
+        }
     }
 
     /// Removes all products with the given path from the cache.
@@ -66,6 +78,8 @@ impl Cache {
 
     /// Retrieves a product from the cache.
     pub fn get(&self, pi: ProductIdentifier) -> Option<GenericProduct> {
+        info!("Cache request for {:?}", pi);
+
         let path = PathBuf::from(&pi.path);
         self.products.get(&path).and_then(move |m| {
             let ProductIdentifier { language, name, path } = pi;

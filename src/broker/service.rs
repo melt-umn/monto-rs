@@ -17,7 +17,7 @@ use tokio_core::reactor::Handle;
 
 use broker::config::{Config, ServiceConfig};
 use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier, ProtocolVersion};
-use service::messages::{BrokerRequest, ServiceExtension, ServiceBrokerNegotiation, ServiceErrors, ServiceNegotiation};
+use service::messages::{BrokerRequest, ServiceExtension, ServiceBrokerNegotiation, ServiceErrors, ServiceNegotiation, ServiceProduct};
 
 /// A connection from the Broker to a Service.
 #[derive(Debug)]
@@ -88,7 +88,7 @@ impl Service {
     }
 
     /// Requests a product from the Service.
-    pub fn request(&self, identifier: ProductIdentifier, products: &[GenericProduct]) -> Box<Future<Item=GenericProduct, Error=RequestError>> {
+    pub fn request(&self, identifier: ProductIdentifier, products: &[GenericProduct]) -> Box<Future<Item=ServiceProduct<GenericProduct>, Error=RequestError>> {
         let service_uri = format!("{}://{}{}/service", self.config.scheme,
                 self.config.addr, self.config.base)
             .parse()
@@ -126,10 +126,7 @@ impl Service {
                         .and_then(|ses| Err(RequestErrorKind::ServiceErrors(ses).into()))
                 },
                 _ => panic!("TODO Proper error handling"),
-            })).and_then(|gp: GenericProduct| {
-                gp.into_product()
-                    .map_err(RequestError::from)
-            }))
+            })))
     }
 }
 

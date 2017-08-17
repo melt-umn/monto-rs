@@ -187,5 +187,5 @@ impl Product for Source {
     fn language(&self) -> Language { self.language.clone() }
     fn name(&self) -> ProductName { ProductName::Source }
     fn path(&self) -> String { self.path.clone() }
-    fn value(&self) -> Value { unimplemented!() }
+    fn value(&self) -> Value { Value::String(self.contents.clone()) }
 }

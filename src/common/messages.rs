@@ -10,6 +10,7 @@ use std::str::FromStr;
 use regex::Regex;
 use semver::Version as SemverVersion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::{Error as SerdeError, Visitor};
 use serde_json::{Error as JsonError, Value};
 
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
@@ -92,8 +93,7 @@ impl Serialize for Identifier {
 }
 
 /// The programming language associated with a Product.
-#[derive(Clone, Deserialize, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Language {
     /// JSON, as described by [RFC 7159](https://tools.ietf.org/html/rfc7159).
     Json,
@@ -117,6 +117,27 @@ impl Language {
     }
 }
 
+impl<'de> Deserialize<'de> for Language {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct V;
+        impl<'de> Visitor<'de> for V {
+            type Value = Language;
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                write!(fmt, "a string")
+            }
+            fn visit_str<E: SerdeError>(self, s: &str) -> Result<Language, E> {
+                self.visit_string(s.to_string())
+            }
+            fn visit_string<E: SerdeError>(self, s: String) -> Result<Language, E> {
+                Ok(s.into())
+            }
+        }
+        deserializer.deserialize_string(V)
+    }
+}
+
 impl Display for Language {
 	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         write!(fmt, "{}", self.name())
@@ -130,6 +151,13 @@ impl From<String> for Language {
             "none" => Language::None,
             _ => Language::Other(s),
         }
+    }
+}
+
+impl Serialize for Language {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = self.to_string();
+        serializer.serialize_str(&s)
     }
 }
 
@@ -300,22 +328,44 @@ impl<'a, P: Product> From<&'a P> for ProductIdentifier {
 /// Defined in
 /// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-6-productname)
 /// of the specification.
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ProductName {
-    /// A vendor-specific product.
-    Other(Identifier),
-
     /// A listing of a directory.
     Directory,
 
     /// Syntactic or semantic errors detected in source code.
     Errors,
 
+    /// Token information to be used for highlighting source code.
+    Highlighting,
+
     /// Source code.
     Source,
 
     // TODO other built-in product types
+
+    /// A vendor-specific product.
+    Other(Identifier),
+}
+
+impl<'de> Deserialize<'de> for ProductName {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct V;
+        impl<'de> Visitor<'de> for V {
+            type Value = ProductName;
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                write!(fmt, "an identifier")
+            }
+            fn visit_str<E: SerdeError>(self, s: &str) -> Result<ProductName, E> {
+                s.parse().map_err(|()| {
+                    E::custom("not an identifier")
+                })
+            }
+        }
+        deserializer.deserialize_str(V)
+    }
 }
 
 impl Display for ProductName {
@@ -323,6 +373,7 @@ impl Display for ProductName {
         match *self {
             ProductName::Directory => write!(fmt, "directory"),
             ProductName::Errors => write!(fmt, "errors"),
+            ProductName::Highlighting => write!(fmt, "highlighting"),
             ProductName::Source => write!(fmt, "source"),
             ProductName::Other(ref ident) => ident.fmt(fmt),
         }
@@ -336,9 +387,17 @@ impl FromStr for ProductName {
         match s {
             "directory" => Ok(ProductName::Directory),
             "errors" => Ok(ProductName::Errors),
+            "highlighting" => Ok(ProductName::Highlighting),
             "source" => Ok(ProductName::Source),
             _ => s.parse().map(ProductName::Other),
         }
+    }
+}
+
+impl Serialize for ProductName {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = self.to_string();
+        serializer.serialize_str(&s)
     }
 }
 

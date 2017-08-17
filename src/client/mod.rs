@@ -7,14 +7,16 @@ pub mod messages;
 mod negotiation;
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::fs::File;
 use std::marker::PhantomData;
+use std::io::Read;
 use std::path::Path;
 
 use either::Either;
 use futures::{Future, Poll, Stream};
-use futures::future::result;
+use futures::future::{err, result};
 use hyper;
-use hyper::{Get, Post, Request, StatusCode, Uri};
+use hyper::{Get, Post, Put, Request, StatusCode, Uri};
 use hyper::client::FutureResponse;
 use hyper::header::{ContentLength, ContentType};
 use serde_json;
@@ -22,6 +24,7 @@ use tokio_core::reactor::Handle;
 use url::Url;
 
 use common::messages::{GenericProduct, Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
+use common::products::Source;
 use self::messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
 
@@ -142,16 +145,60 @@ impl Client {
     }
 
     /// Sends a `source` Product to the Broker.
-    pub fn send_file<P: AsRef<Path>>(&mut self, path: P) -> Box<Future<Item=(), Error=SendError>> {
-        unimplemented!()
+    pub fn send_file<P: AsRef<Path>>(&mut self, path: P, language: Language) -> Box<Future<Item=(), Error=SendError>> {
+        let path_str = path.as_ref()
+            .display()
+            .to_string();
+        let src = match File::open(path) {
+            Ok(mut file) => {
+                let mut buf = String::new();
+                file.read_to_string(&mut buf)
+                    .map(|_| buf)
+            },
+            Err(e) => Err(e),
+        };
+        let src = match src {
+            Ok(src) => src,
+            Err(e) => return Box::new(err(e.into())),
+        };
+        self.send_product(&Source {
+            contents: src,
+            language,
+            path: path_str,
+        })
     }
 
     /// Sends a Product to the Broker, as described in
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
     /// of the specification.
     pub fn send_product<P: Product>(&mut self, p: &P) -> Box<Future<Item=(), Error=SendError>> {
-        // let mut req = Request::new(Put, self.make_uri(None, &p.name, Some(&p.language), &p.path));
-        unimplemented!()
+        let path = p.path();
+        let body = match serde_json::to_string(&p.value()) {
+            Ok(body) => body,
+            Err(e) => return Box::new(err(SendError::from(e))),
+        };
+        let mut req = Request::new(Put, self.make_uri(None, &p.name(), Some(&p.language()), &path));
+        {
+            let headers = req.headers_mut();
+            headers.set(ContentLength(body.len() as u64));
+            headers.set(ContentType::json());
+        }
+        req.set_body(body);
+        Box::new(self.http.request(req).and_then(|r| {
+            let status = r.status();
+            r.body()
+                .concat2()
+                .map(move |b| (b, status))
+        }).map_err(SendError::from).and_then(|(body, status)| {
+            result(match status {
+                StatusCode::NoContent => Ok(()),
+                StatusCode::BadRequest => Err(match serde_json::from_slice(body.as_ref()) {
+                    Ok(bpe) => SendErrorKind::Broker(bpe).into(),
+                    Err(err) => SendError::from(err),
+                }),
+                _ => panic!("TODO Proper error handling"),
+            })
+        }))
     }
 }
 
@@ -229,6 +276,8 @@ error_chain! {
             #[doc = "An error from the Broker."];
         Hyper(::hyper::Error)
             #[doc = "An error connecting to the Broker."];
+        Io(::std::io::Error)
+            #[doc = "An I/O error."];
         Json(serde_json::Error)
             #[doc = "An invalid response (bad JSON) was received from the Broker."];
     }
