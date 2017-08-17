@@ -88,18 +88,15 @@ impl Service {
     }
 
     /// Requests a product from the Service.
-    pub fn request<In: Product, Out: Product + 'static>(&self, identifier: ProductIdentifier, products: Vec<In>) -> Box<Future<Item=Out, Error=RequestError>> {
+    pub fn request(&self, identifier: ProductIdentifier, products: &[GenericProduct]) -> Box<Future<Item=GenericProduct, Error=RequestError>> {
         let service_uri = format!("{}://{}{}/service", self.config.scheme,
                 self.config.addr, self.config.base)
             .parse()
             .expect("TODO Proper error handling");
         let mut request = Request::new(Method::Post, service_uri);
-        let products: Vec<GenericProduct> = products.iter()
-            .map(GenericProduct::from_product)
-            .collect();
         let br = BrokerRequest {
             request: identifier,
-            products,
+            products: products.to_owned(),
         };
         match serde_json::to_string(&br) {
             Ok(br) => request.set_body(br),

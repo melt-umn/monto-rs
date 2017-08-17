@@ -64,7 +64,7 @@ impl Broker {
 }
 
 #[derive(Clone)]
-struct Client(Rc<RefCell<Broker>>);
+pub(crate) struct Client(pub Rc<RefCell<Broker>>);
 
 impl Service for Client {
     type Request = Request;
