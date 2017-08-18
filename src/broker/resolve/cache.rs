@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::mpsc::{channel, Receiver, TryRecvError};
+use std::sync::mpsc::{channel, TryRecvError};
 use std::time::Duration;
 
 use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, RecursiveMode, Watcher as NotifyWatcher};
@@ -11,14 +11,13 @@ use serde_json::Value;
 use tokio_core::reactor::Handle;
 
 use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier};
-use super::watcher::Watcher;
+use super::watcher::watch_future;
 
 /// A cache for products.
 pub struct Cache {
     products: BTreeMap<PathBuf, BTreeMap<ProductDescriptor, Value>>,
     watcher: RecommendedWatcher,
     watching: BTreeSet<PathBuf>,
-    watch_chan: Receiver<DebouncedEvent>,
 }
 
 impl Cache {
@@ -30,22 +29,9 @@ impl Cache {
             products: BTreeMap::new(),
             watcher: watcher,
             watching: BTreeSet::new(),
-            watch_chan: recv,
         }));
-        handle.spawn(Watcher::new(cache.clone()));
+        handle.spawn(watch_future(cache.clone(), recv));
         Ok(cache)
-    }
-
-    /// Returns the next event received by the FS watcher.
-    pub(crate) fn event(&self) -> Option<DebouncedEvent> {
-        match self.watch_chan.try_recv() {
-            Ok(ev) => Some(ev),
-            Err(TryRecvError::Disconnected) => {
-                error!("The filesystem watcher died; https://twitter.com/rob_pike/status/447202124753952768");
-                None
-            },
-            Err(TryRecvError::Empty) => None,
-        }
     }
 
     /// Adds a product to the cache, replacing any other product that was
@@ -56,10 +42,12 @@ impl Cache {
 
         let desc = ProductDescriptor { name, language };
         let path = PathBuf::from(path);
+        assert!(path.is_absolute());
         self.products.entry(path.clone())
             .or_insert_with(BTreeMap::new)
             .insert(desc, value);
         if self.watching.insert(path.clone()) {
+            info!("self.watcher.watch({}, RecursiveMode::Recursive)", path.display());
             if let Err(err) = self.watcher.watch(path, RecursiveMode::Recursive) {
                 error!("{}", err);
             }
