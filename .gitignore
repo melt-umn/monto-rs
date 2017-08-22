@@ -3,6 +3,7 @@
 !/.travis.yml
 
 *.bin
+*.o
 *.rs.bk
 target
 

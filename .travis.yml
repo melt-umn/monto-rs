@@ -12,6 +12,8 @@ matrix:
 script:
 - cargo build --all
 - cargo test --all
+- make -C monto-rs-c/examples/client
+- make -C monto-rs-c/examples/service
 
 before_deploy:
 - cargo build --release --all

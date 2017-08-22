@@ -1,0 +1,16 @@
+[package]
+name = "monto-rs-c"
+version = "0.1.0"
+authors = ["Nathaniel Ringo <remexre@gmail.com>"]
+
+[lib]
+name = "monto_rs"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+either = "^1.1.0"
+futures = "^0.1.14"
+libc = "^0.2.29"
+monto = { path = ".." }
+tokio-core = "^0.1.8"
+void = "^1.0.2"
