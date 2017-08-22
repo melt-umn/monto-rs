@@ -12,6 +12,7 @@ matrix:
 script:
 - cargo build --all
 - cargo test --all
+- cargo build --all --release # needed for bindings
 - make -C monto-rs-c/examples/client
 - make -C monto-rs-c/examples/service
 
