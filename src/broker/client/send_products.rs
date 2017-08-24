@@ -5,7 +5,7 @@ use serde_json::Value;
 
 use client::messages::BrokerPutError;
 use common::json_response;
-use common::messages::{GenericProduct, Language, ProductName};
+use common::messages::{Language, Product, ProductName};
 use super::{BoxedFuture, Client};
 
 impl Client {
@@ -19,7 +19,7 @@ impl Client {
         let broker = self.0.borrow_mut();
         let mut cache = broker.cache.borrow_mut();
 
-        let gp = GenericProduct { name, path, language, value };
+        let gp = Product { name, path, language, value };
         cache.add(gp);
 
         Box::new(ok(Response::new().with_status(StatusCode::NoContent)))

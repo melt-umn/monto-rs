@@ -9,14 +9,14 @@ use futures::future::{err, ok};
 use broker::client::Client;
 use broker::service::{RequestError, RequestErrorKind};
 use client::messages::BrokerGetError;
-use common::messages::{GenericProduct, Identifier, ProductDescriptor, ProductIdentifier};
+use common::messages::{Identifier, Product, ProductDescriptor, ProductIdentifier};
 pub use self::cache::Cache;
 use service::messages::{ServiceError, ServiceErrors, ServiceNotice};
 use super::{Broker, Service};
 
 impl Client {
     /// Fully resolves a product request, including doing dependency resolution.
-    pub fn resolve(self, si: Identifier, pi: ProductIdentifier, mut ps: Vec<GenericProduct>) -> Box<Future<Item=GenericProduct, Error=BrokerGetError>> {
+    pub fn resolve(self, si: Identifier, pi: ProductIdentifier, mut ps: Vec<Product>) -> Box<Future<Item=Product, Error=BrokerGetError>> {
         let self2 = self.clone();
         let broker = self2.0.borrow();
         info!("getting {:?} from {}", pi, si);
@@ -42,6 +42,7 @@ impl Client {
                             }) => {
                                 for ServiceNotice::UnusedDependency(pi) in notices {
                                     let idx = ps.iter()
+                                        .cloned()
                                         .map(ProductIdentifier::from)
                                         .position(|pi2| pi2 == pi);
                                     if let Some(idx) = idx {
@@ -68,7 +69,7 @@ impl Client {
     }
 
     /// Resolves from any service.
-    fn resolve_dep(self, pi: ProductIdentifier) -> Box<Future<Item=GenericProduct, Error=BrokerGetError>> {
+    fn resolve_dep(self, pi: ProductIdentifier) -> Box<Future<Item=Product, Error=BrokerGetError>> {
         let service = {
             let broker = self.0.borrow();
             if let Some(gp) = broker.from_cache(pi.clone()) {
@@ -91,7 +92,7 @@ impl Client {
     }
 
     /// Handles the error case of resolve.
-    fn resolve_next(self, si: Identifier, pi: ProductIdentifier, mut ps: Vec<GenericProduct>, mut es: Vec<ServiceError>) -> Box<Future<Item=GenericProduct, Error=BrokerGetError>> {
+    fn resolve_next(self, si: Identifier, pi: ProductIdentifier, mut ps: Vec<Product>, mut es: Vec<ServiceError>) -> Box<Future<Item=Product, Error=BrokerGetError>> {
         if let Some(se) = es.pop() {
             match se {
                 ServiceError::UnmetDependency(pi2) => {
@@ -115,7 +116,7 @@ impl Client {
 
 impl Broker {
     /// Tries to retrieve a product from the cache.
-    fn from_cache(&self, pi: ProductIdentifier) -> Option<GenericProduct> {
+    fn from_cache(&self, pi: ProductIdentifier) -> Option<Product> {
         let cache = self.cache.borrow();
         cache.get(pi)
     }

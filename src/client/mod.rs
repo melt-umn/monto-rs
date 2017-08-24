@@ -8,7 +8,6 @@ mod negotiation;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::marker::PhantomData;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -23,7 +22,7 @@ use serde_json;
 use tokio_core::reactor::Handle;
 use url::Url;
 
-use common::messages::{GenericProduct, Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
+use common::messages::{Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
 use common::products::Source;
 use self::messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
@@ -106,8 +105,8 @@ impl Client {
     /// Attempts to retrieve a Product from the Broker, as described in
     /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-4-requesting-products)
     /// of the specification.
-    pub fn request<P: Product + 'static>(&mut self, service: &Identifier, p: &ProductIdentifier) -> Box<Future<Item=P, Error=RequestError>> {
-        let path: &Path = p.path.as_ref();
+    pub fn request(&mut self, service: &Identifier, pi: &ProductIdentifier) -> Box<Future<Item=Product, Error=RequestError>> {
+        let path: &Path = pi.path.as_ref();
         let path = if path.is_absolute() {
             path.to_owned()
         } else {
@@ -118,8 +117,8 @@ impl Client {
         };
         let path = path.display().to_string();
 
-        let req = Request::new(Get, self.make_uri(Some(service), &p.name, Some(&p.language), &path));
-        info!("Requesting product {:?} from {}", p, service);
+        let req = Request::new(Get, self.make_uri(Some(service), &pi.name, Some(&pi.language), &path));
+        info!("Requesting product {:?} from {}", pi, service);
         Box::new(self.http.request(req)
             .map_err(RequestError::from)
             .and_then(|res| {
@@ -133,7 +132,6 @@ impl Client {
                 result(match status {
                     StatusCode::Ok => {
                         serde_json::from_slice(body.as_ref())
-                            .and_then(|gp: GenericProduct| P::from_json(gp.name, gp.language, gp.path, gp.value))
                             .map_err(RequestError::from)
                     },
                     _ => {
@@ -179,7 +177,7 @@ impl Client {
             Ok(src) => src,
             Err(e) => return Box::new(err(e.into())),
         };
-        self.send_product(&Source {
+        self.send_product(Source {
             contents: src,
             language,
             path: path.display().to_string(),
@@ -189,8 +187,9 @@ impl Client {
     /// Sends a Product to the Broker, as described in
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
     /// of the specification.
-    pub fn send_product<P: Product>(&mut self, p: &P) -> Box<Future<Item=(), Error=SendError>> {
-        let path = PathBuf::from(p.path());
+    pub fn send_product<P: Into<Product>>(&mut self, p: P) -> Box<Future<Item=(), Error=SendError>> {
+        let Product { language, name, path, value } = p.into();
+        let path = PathBuf::from(path);
         let path = if path.is_absolute() {
             path
         } else {
@@ -201,11 +200,11 @@ impl Client {
         };
         let path = path.display().to_string();
 
-        let body = match serde_json::to_string(&p.value()) {
+        let body = match serde_json::to_string(&value) {
             Ok(body) => body,
             Err(e) => return Box::new(err(SendError::from(e))),
         };
-        let mut req = Request::new(Put, self.make_uri(None, &p.name(), Some(&p.language()), &path));
+        let mut req = Request::new(Put, self.make_uri(None, &name, Some(&language), &path));
         {
             let headers = req.headers_mut();
             headers.set(ContentLength(body.len() as u64));

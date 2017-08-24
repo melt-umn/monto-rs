@@ -22,23 +22,15 @@ pub struct Directory {
     pub entries: Vec<DirectoryEntry>,
 }
 
-impl Product for Directory {
-    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
-        assert_eq!(name, ProductName::Directory); // TODO Real error handling...
-        assert_eq!(language, Language::None); // TODO Real error handling...
-        Ok(Directory {
-            path,
-            entries: unimplemented!(),
-        })
+impl From<Directory> for Product {
+    fn from(d: Directory) -> Product {
+        Product {
+            name: ProductName::Directory,
+            language: Language::None,
+            path: d.path,
+            value: unimplemented!(),
+        }
     }
-    fn to_json(&self) -> Result<Value, JsonError> {
-        unimplemented!()
-    }
-
-    fn language(&self) -> Language { Language::None }
-    fn name(&self) -> ProductName { ProductName::Directory }
-    fn path(&self) -> String { self.path.clone() }
-    fn value(&self) -> Value { unimplemented!() }
 }
 
 /// A single entry in a directory.
@@ -102,23 +94,15 @@ pub struct Errors {
     pub path: String,
 }
 
-impl Product for Errors {
-    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
-        assert_eq!(name, ProductName::Errors); // TODO Real error handling...
-        Ok(Errors {
-            errors: unimplemented!(),
-            language,
-            path,
-        })
+impl From<Errors> for Product {
+    fn from(e: Errors) -> Product {
+        Product {
+            name: ProductName::Errors,
+            language: e.language,
+            path: e.path,
+            value: unimplemented!(),
+        }
     }
-    fn to_json(&self) -> Result<Value, JsonError> {
-        unimplemented!()
-    }
-
-    fn language(&self) -> Language { Language::None }
-    fn name(&self) -> ProductName { ProductName::Errors }
-    fn path(&self) -> String { self.path.clone() }
-    fn value(&self) -> Value { unimplemented!() }
 }
 
 /// A single syntactic or semantic error.
@@ -172,20 +156,13 @@ pub struct Source {
     pub path: String,
 }
 
-impl Product for Source {
-    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
-        Ok(Source {
-            contents: unimplemented!(),
-            language,
-            path,
-        })
+impl From<Source> for Product {
+    fn from(s: Source) -> Product {
+        Product {
+            name: ProductName::Source,
+            language: s.language,
+            path: s.path,
+            value: Value::String(s.contents),
+        }
     }
-    fn to_json(&self) -> Result<Value, JsonError> {
-        unimplemented!()
-    }
-
-    fn language(&self) -> Language { self.language.clone() }
-    fn name(&self) -> ProductName { ProductName::Source }
-    fn path(&self) -> String { self.path.clone() }
-    fn value(&self) -> Value { Value::String(self.contents.clone()) }
 }

@@ -195,39 +195,8 @@ impl Serialize for NamespacedName {
 /// Defined in
 /// [Section 3.1.3](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-3-product)
 /// of the specification.
-pub trait Product {
-    /// Deserializes the product.
-    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError>
-        where Self: Sized;
-
-    /// Serializes the product.
-    fn to_json(&self) -> Result<Value, JsonError>;
-
-    /// The language of the product.
-    fn language(&self) -> Language;
-
-    /// The name of the product.
-    fn name(&self) -> ProductName;
-
-    /// The path of the product.
-    fn path(&self) -> String;
-
-    /// The serialization of the Product.
-    fn value(&self) -> Value;
-
-    /// Gets a Product's ProductIdentifier.
-    fn identifier(&self) -> ProductIdentifier {
-        ProductIdentifier {
-            language: self.language(),
-            name: self.name(),
-            path: self.path(),
-        }
-    }
-}
-
-/// A generic product type, which can hold any Product.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct GenericProduct {
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Product {
     /// The name of the Product.
     pub name: ProductName,
 
@@ -239,38 +208,6 @@ pub struct GenericProduct {
 
     /// The contents of the Product.
     pub value: Value
-}
-
-impl GenericProduct {
-    /// Converts a Product into a GenericProduct.
-    pub fn from_product<P: Product>(p: &P) -> GenericProduct {
-        GenericProduct {
-            language: p.language(),
-            name: p.name(),
-            path: p.path(),
-            value: p.value(),
-        }
-    }
-
-    /// Converts a GenericProduct into a Product.
-    pub fn into_product<P: Product>(self) -> Result<P, JsonError> {
-        let GenericProduct { name, language, path, value } = self;
-        P::from_json(name, language, path, value)
-    }
-}
-
-impl Product for GenericProduct {
-    fn from_json(name: ProductName, language: Language, path: String, value: Value) -> Result<Self, JsonError> {
-        Ok(GenericProduct { name, language, path, value })
-    }
-    fn to_json(&self) -> Result<Value, JsonError> {
-        unimplemented!()
-    }
-
-    fn language(&self) -> Language { self.language.clone() }
-    fn name(&self) -> ProductName { self.name.clone() }
-    fn path(&self) -> String { self.path.clone() }
-    fn value(&self) -> Value { self.value.clone() }
 }
 
 /// A Product's name and language.
@@ -313,12 +250,22 @@ pub struct ProductIdentifier {
     pub path: String,
 }
 
-impl<'a, P: Product> From<&'a P> for ProductIdentifier {
-    fn from(p: &'a P) -> ProductIdentifier {
+impl From<Product> for ProductIdentifier {
+    fn from(p: Product) -> ProductIdentifier {
         ProductIdentifier {
-            name: p.name(),
-            language: p.language(),
-            path: p.path(),
+            name: p.name,
+            language: p.language,
+            path: p.path,
+        }
+    }
+}
+
+impl<'a> From<&'a Product> for ProductIdentifier {
+    fn from(p: &'a Product) -> ProductIdentifier {
+        ProductIdentifier {
+            name: p.name.clone(),
+            language: p.language.clone(),
+            path: p.path.clone(),
         }
     }
 }

@@ -4,7 +4,7 @@ use hyper::StatusCode;
 
 use broker::service::RequestError;
 use common::json_response;
-use common::messages::{GenericProduct, Identifier, ProductIdentifier};
+use common::messages::{Identifier, ProductIdentifier};
 use client::messages::{BrokerGetError, ClientNegotiation};
 use super::{BoxedFuture, Client};
 

@@ -4,7 +4,7 @@
 
 use std::collections::BTreeSet;
 
-use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
+use common::messages::{Product, ProductDescriptor, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
 
 /// The Message that a Broker sends to a Service during version negotiation.
 ///
@@ -64,7 +64,7 @@ pub struct BrokerRequest {
     pub request: ProductIdentifier,
 
     /// Products provided with the request.
-    pub products: Vec<GenericProduct>,
+    pub products: Vec<Product>,
 }
 
 /// Errors encountered by a Service.
@@ -102,9 +102,9 @@ pub enum ServiceError {
 /// [Section 5.4.5](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-5-serviceproduct)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ServiceProduct<P: Product> {
+pub struct ServiceProduct {
     /// The product sent.
-    pub product: P,
+    pub product: Product,
 
     /// Any notices generated.
     pub notices: Vec<ServiceNotice>,

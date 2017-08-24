@@ -27,7 +27,7 @@ use void::Void;
 use broker::Broker;
 use client::messages::{ClientNegotiation, ClientBrokerNegotiation};
 use common::{error_response, json_request, json_response};
-use common::messages::{GenericProduct, Language, ProductIdentifier, ProtocolVersion};
+use common::messages::{Language, ProductIdentifier, ProtocolVersion};
 
 type BoxedFuture = Box<Future<Item=Response, Error=Either<HyperError, JsonError>>>;
 

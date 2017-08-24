@@ -10,7 +10,7 @@ use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, Recursive
 use serde_json::Value;
 use tokio_core::reactor::Handle;
 
-use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier};
+use common::messages::{Product, ProductDescriptor, ProductIdentifier};
 use super::watcher::Watcher;
 
 /// A cache for products.
@@ -50,8 +50,8 @@ impl Cache {
 
     /// Adds a product to the cache, replacing any other product that was
     /// previously present.
-    pub fn add(&mut self, product: GenericProduct) {
-        let GenericProduct { name, language, path, value } = product;
+    pub fn add(&mut self, product: Product) {
+        let Product { name, language, path, value } = product;
         info!("Added to cache: {} {} {}", name, language, path);
 
         let desc = ProductDescriptor { name, language };
@@ -77,14 +77,14 @@ impl Cache {
     }
 
     /// Retrieves a product from the cache.
-    pub fn get(&self, pi: ProductIdentifier) -> Option<GenericProduct> {
+    pub fn get(&self, pi: ProductIdentifier) -> Option<Product> {
         info!("Cache request for {:?}", pi);
 
         let path = PathBuf::from(&pi.path);
         self.products.get(&path).and_then(move |m| {
             let ProductIdentifier { language, name, path } = pi;
             let pd = ProductDescriptor { language, name };
-            m.get(&pd).map(move |value| GenericProduct {
+            m.get(&pd).map(move |value| Product {
                 language: pd.language,
                 name: pd.name,
                 path: path,

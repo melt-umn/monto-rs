@@ -16,7 +16,7 @@ use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;
 
 use broker::config::{Config, ServiceConfig};
-use common::messages::{GenericProduct, Product, ProductDescriptor, ProductIdentifier, ProtocolVersion};
+use common::messages::{Product, ProductDescriptor, ProductIdentifier, ProtocolVersion};
 use service::messages::{BrokerRequest, ServiceExtension, ServiceBrokerNegotiation, ServiceErrors, ServiceNegotiation, ServiceProduct};
 
 /// A connection from the Broker to a Service.
@@ -88,7 +88,7 @@ impl Service {
     }
 
     /// Requests a product from the Service.
-    pub fn request(&self, identifier: ProductIdentifier, products: &[GenericProduct]) -> Box<Future<Item=ServiceProduct<GenericProduct>, Error=RequestError>> {
+    pub fn request(&self, identifier: ProductIdentifier, products: &[Product]) -> Box<Future<Item=ServiceProduct, Error=RequestError>> {
         let service_uri = format!("{}://{}{}/service", self.config.scheme,
                 self.config.addr, self.config.base)
             .parse()

@@ -17,7 +17,7 @@ use log::LogLevelFilter;
 use tokio_core::reactor::Core;
 
 use monto::client::{Client, Config};
-use monto::common::messages::{GenericProduct, Language, ProductIdentifier, SoftwareVersion};
+use monto::common::messages::{Language, ProductIdentifier, SoftwareVersion};
 
 fn main() {
     // Parse CLI arguments.
@@ -123,7 +123,7 @@ fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
         language: language.to_string().into(),
         path: path.to_string(),
     };
-    let p: GenericProduct = must(core.run(client.request(&service, &pi)));
+    let p = must(core.run(client.request(&service, &pi)));
 
     // Print the returned value.
     println!("{}", p.value);

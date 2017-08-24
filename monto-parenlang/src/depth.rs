@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use monto::common::messages::{GenericProduct, Language, Product, ProductDescriptor, ProductIdentifier, ProductName};
+use monto::common::messages::{Language, Product, ProductDescriptor, ProductIdentifier, ProductName};
 use monto::service::ServiceProvider;
 use monto::service::messages::{ServiceError, ServiceErrors, ServiceNotice, ServiceProduct};
 
@@ -10,11 +10,11 @@ use parenlang::Ast;
 pub struct DepthProvider;
 
 impl DepthProvider {
-    fn run(&self, path: &str, src: &str) -> Result<GenericProduct, String> {
+    fn run(&self, path: &str, src: &str) -> Result<Product, String> {
         let ast = src.parse()
             .map_err(|e| format!("{:?}", e))?;
         let depth = depth(&ast);
-        Ok(GenericProduct {
+        Ok(Product {
             name: "edu.umn.cs.melt.monto_rs.balanced_parens.depth".parse().unwrap(),
             language: Language::Other("balanced-parens".to_string()),
             path: path.to_string(),
@@ -31,10 +31,10 @@ impl ServiceProvider for DepthProvider {
         }
     }
 
-    fn service(&mut self, path: &str, mut products: Vec<GenericProduct>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors> {
+    fn service(&mut self, path: &str, mut products: Vec<Product>) -> Result<ServiceProduct, ServiceErrors> {
         let language = Language::Other("balanced-parens".to_string());
         let idx = products.iter().position(|p| {
-            p.name() == ProductName::Source && p.language() == language && p.path() == path
+            p.name == ProductName::Source && p.language == language && p.path == path
         });
 
         let r = if let Some(idx) = idx {
@@ -50,7 +50,7 @@ impl ServiceProvider for DepthProvider {
             }))
         };
         let notices = products.into_iter()
-            .map(|p| p.identifier())
+            .map(|p| p.into())
             .map(ServiceNotice::UnusedDependency)
             .collect();
         match r {

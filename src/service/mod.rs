@@ -13,9 +13,9 @@ use std::collections::BTreeMap;
 
 use tokio_core::reactor::Handle;
 
-use common::messages::{GenericProduct, Product, ProductDescriptor, ProtocolVersion};
+use common::messages::{Product, ProductDescriptor, ProtocolVersion};
 use self::config::Config;
-use self::messages::{ServiceErrors, ServiceNegotiation, ServiceNotice, ServiceProduct};
+use self::messages::{ServiceErrors, ServiceNegotiation, ServiceProduct};
 pub use self::serve::ServeFuture;
 
 /// A Service and the associated HTTP server.
@@ -61,5 +61,5 @@ pub trait ServiceProvider {
     fn descriptor(&self) -> ProductDescriptor;
 
     /// The function that actually runs the service.
-    fn service(&mut self, path: &str, products: Vec<GenericProduct>) -> Result<ServiceProduct<GenericProduct>, ServiceErrors>;
+    fn service(&mut self, path: &str, products: Vec<Product>) -> Result<ServiceProduct, ServiceErrors>;
 }
