@@ -11,12 +11,10 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use either::Either;
-use futures::{Future, Poll, Stream};
+use futures::{Future, Stream};
 use futures::future::{err, result};
 use hyper;
 use hyper::{Get, Post, Put, Request, StatusCode, Uri};
-use hyper::client::FutureResponse;
 use hyper::header::{ContentLength, ContentType};
 use serde_json;
 use tokio_core::reactor::Handle;

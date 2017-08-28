@@ -3,14 +3,12 @@
 use std::cmp::min;
 use std::collections::BTreeSet;
 
-use either::Either;
 use futures::{Future, Stream};
 use futures::future::{err, ok, result};
 use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request, StatusCode};
 use hyper::client::HttpConnector;
 use hyper::error::UriError;
 use itertools::Itertools;
-use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;

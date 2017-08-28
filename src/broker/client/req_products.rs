@@ -1,11 +1,9 @@
-use either::{Left, Right};
 use futures::Future;
 use hyper::StatusCode;
 
-use broker::service::RequestError;
 use common::json_response;
 use common::messages::{Identifier, ProductIdentifier};
-use client::messages::{BrokerGetError, ClientNegotiation};
+use client::messages::BrokerGetError;
 use super::{BoxedFuture, Client};
 
 impl Client {

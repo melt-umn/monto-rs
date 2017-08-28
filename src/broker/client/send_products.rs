@@ -1,4 +1,3 @@
-use futures::Future;
 use futures::future::ok;
 use hyper::{Response, StatusCode};
 use serde_json::Value;
@@ -30,7 +29,7 @@ impl Client {
     /// Currently, not implemented (always returns `None`).
     ///
     /// Look into binding the `tokei` library, I guess?
-    fn detect_language(&self, name: &ProductName, path: &str, value: &Value) -> Option<Language> {
+    fn detect_language(&self, _name: &ProductName, _path: &str, _value: &Value) -> Option<Language> {
         None
     }
 }

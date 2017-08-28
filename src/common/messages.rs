@@ -11,7 +11,7 @@ use regex::Regex;
 use semver::Version as SemverVersion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error as SerdeError, Visitor};
-use serde_json::{Error as JsonError, Value};
+use serde_json::Value;
 
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
 ///

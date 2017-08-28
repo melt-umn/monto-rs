@@ -1,4 +1,3 @@
-use futures::Future;
 use hyper::StatusCode;
 
 use common::json_response;

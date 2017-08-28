@@ -12,7 +12,7 @@ use client::messages::BrokerGetError;
 use common::messages::{Identifier, Product, ProductDescriptor, ProductIdentifier};
 pub use self::cache::Cache;
 use service::messages::{ServiceError, ServiceErrors, ServiceNotice};
-use super::{Broker, Service};
+use super::Broker;
 
 impl Client {
     /// Fully resolves a product request, including doing dependency resolution.

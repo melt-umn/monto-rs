@@ -5,7 +5,7 @@
 use std::fs::FileType;
 use std::path::PathBuf;
 
-use serde_json::{Error as JsonError, Value};
+use serde_json::{to_value, Value};
 
 use common::messages::{Language, ProductName, Product};
 
@@ -24,11 +24,12 @@ pub struct Directory {
 
 impl From<Directory> for Product {
     fn from(d: Directory) -> Product {
+        let value = to_value(d.entries);
         Product {
             name: ProductName::Directory,
             language: Language::None,
             path: d.path,
-            value: unimplemented!(),
+            value: value.unwrap(),
         }
     }
 }
@@ -48,7 +49,7 @@ pub struct DirectoryEntry {
 }
 
 /// The type of a directory entry.
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
 pub enum DirectoryEntryType {
     /// A regular file.
@@ -100,7 +101,7 @@ impl From<Errors> for Product {
             name: ProductName::Errors,
             language: e.language,
             path: e.path,
-            value: unimplemented!(),
+            value: to_value(e.errors).unwrap(),
         }
     }
 }
@@ -110,15 +111,17 @@ impl From<Errors> for Product {
 /// Defined in
 /// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft02/#6-2-errors)
 /// of the specification.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all="snake_case")]
 pub struct Error {
     /// The error message.
     pub message: String,
 
     /// The first byte of the error.
-    pub startByte: usize,
+    pub start_byte: usize,
 
     /// The last byte of the error.
-    pub endByte: usize,
+    pub end_byte: usize,
 
     /// The severity of the error.
     pub severity: ErrorSeverity,
@@ -129,6 +132,8 @@ pub struct Error {
 /// Defined in
 /// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft02/#6-2-errors)
 /// of the specification.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all="snake_case", untagged)]
 pub enum ErrorSeverity {
     /// A fatal error.
     Error,

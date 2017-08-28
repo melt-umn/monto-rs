@@ -2,12 +2,9 @@ use std::cell::RefCell;
 use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::mpsc::TryRecvError;
 
 use futures::{Async, Future};
 use notify::DebouncedEvent;
-use tokio_core::reactor::Handle;
-use void::Void;
 
 use super::cache::Cache;
 

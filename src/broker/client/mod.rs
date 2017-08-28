@@ -17,17 +17,16 @@ use hyper::{Body, Error as HyperError, Method, Request, Response, StatusCode};
 use hyper::header::ContentType;
 use hyper::server::{Http, Service};
 use log::LogLevel;
+use mime;
 use serde_json::Error as JsonError;
 use tokio_core::net::{Incoming, TcpListener};
 use tokio_core::reactor::Handle;
-use url::Url;
 use url::form_urlencoded::parse as parse_query;
 use void::Void;
 
 use broker::Broker;
-use client::messages::{ClientNegotiation, ClientBrokerNegotiation};
-use common::{error_response, json_request, json_response};
-use common::messages::{Language, ProductIdentifier, ProtocolVersion};
+use common::{error_response, json_request};
+use common::messages::{Language, ProductIdentifier};
 
 type BoxedFuture = Box<Future<Item=Response, Error=Either<HyperError, JsonError>>>;
 
@@ -90,11 +89,17 @@ impl Service for Client {
                 let language = query_pairs.find(|&(ref k, _)| k == "language")
                     .map(|(_, v)| v.into_owned())
                     .map(Language::from);
-                let content_type: ContentType = headers.get()
+                let client = self.clone();
+                let ContentType(content_type) = headers.get()
                     .map(Clone::clone)
                     .unwrap_or_else(ContentType::json);
-                let client = self.clone();
-                Box::new(json_request(body).and_then(move |p| client.send_products(pt, pp, language, p)))
+                match (content_type.type_(), content_type.subtype()) {
+                    (mime::TEXT, mime::PLAIN) => unimplemented!(),
+                    (mime::APPLICATION, mime::JSON) => {
+                        Box::new(json_request(body).and_then(move |p| client.send_products(pt, pp, language, p)))
+                    },
+                    _ => unimplemented!(),
+                }
             },
             (Method::Get, path) if path.len() == 4 && path[0] == "" && path[1] == "monto" => {
                 let service_id = path[2].parse().expect("TODO Error handling");
