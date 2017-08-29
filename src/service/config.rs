@@ -232,7 +232,7 @@ impl Default for VersionConfig {
     fn default() -> VersionConfig {
         let random = 0; // TODO
         VersionConfig {
-            id: format!("edu.umn.cs.melt.monto.servicelib.{:08x}", random).parse().unwrap(),
+            id: format!("edu.umn.cs.melt.monto.servicelib{:08x}", random).parse().unwrap(),
             name: "Reference Implementation Service Library".to_owned(),
             vendor: "Minnesota Extensible Language Tools".to_owned(),
             major: 0,
