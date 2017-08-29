@@ -18,7 +18,7 @@ use hyper::header::ContentType;
 use hyper::server::{Http, Service};
 use log::LogLevel;
 use mime;
-use serde_json::Error as JsonError;
+use serde_json::{Error as JsonError, Value};
 use tokio_core::net::{Incoming, TcpListener};
 use tokio_core::reactor::Handle;
 use url::form_urlencoded::parse as parse_query;
@@ -26,7 +26,7 @@ use void::Void;
 
 use broker::Broker;
 use common::{error_response, json_request};
-use common::messages::{Language, ProductIdentifier};
+use common::messages::{Language, ProductIdentifier, ProductName};
 
 type BoxedFuture = Box<Future<Item=Response, Error=Either<HyperError, JsonError>>>;
 
@@ -94,7 +94,16 @@ impl Service for Client {
                     .map(Clone::clone)
                     .unwrap_or_else(ContentType::json);
                 match (content_type.type_(), content_type.subtype()) {
-                    (mime::TEXT, mime::PLAIN) => unimplemented!(),
+                    (mime::TEXT, mime::PLAIN) => {
+                        if pt == ProductName::Source {
+                            Box::new(body.concat2().map_err(Left).and_then(move |b| {
+                                let b = String::from_utf8_lossy(b.as_ref()).into_owned();
+                                client.send_products(pt, pp, language, Value::String(b))
+                            }))
+                        } else {
+                            panic!("TODO Error Handling");
+                        }
+                    },
                     (mime::APPLICATION, mime::JSON) => {
                         Box::new(json_request(body).and_then(move |p| client.send_products(pt, pp, language, p)))
                     },

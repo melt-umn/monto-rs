@@ -294,8 +294,6 @@ pub enum ProductName {
     /// Source code.
     Source,
 
-    // TODO other built-in product types
-
     /// A vendor-specific product.
     Other(Identifier),
 }
