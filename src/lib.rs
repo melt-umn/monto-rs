@@ -36,3 +36,6 @@ pub mod broker;
 pub mod client;
 pub mod common;
 pub mod service;
+
+#[doc(hidden)]
+pub use serde_json::Value;

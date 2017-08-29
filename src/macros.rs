@@ -37,7 +37,7 @@ macro_rules! simple_service_provider {
                 let language = $lang.to_owned().into();
                 $crate::common::messages::ProductDescriptor { name, language }
             }
-            fn service(&mut self, $path: &str, $input: ::std::vec::Vec<$crate::common::messages::Product>) -> ::std::result::Result<$crate::service::messages::ServiceProduct, $crate::service::messages::ServiceErrors> $body
+            fn service(&mut self, $path: &str, $input: ::std::vec::Vec<$crate::common::messages::Product>) -> (::std::result::Result<$crate::Value, ::std::vec::Vec<$crate::service::messages::ServiceError>>, ::std::vec::Vec<$crate::service::messages::ServiceNotice>) $body
         }
     }
 }
