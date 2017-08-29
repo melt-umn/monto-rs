@@ -1,8 +1,7 @@
-[workspace]
-members = ["monto-parenlang"]
-
 [package]
 authors = ["Nathaniel Ringo <remexre@gmail.com>"]
+documentation = "https://docs.rs/monto"
+homepage = "https://github.com/melt-umn/monto-rs"
 license = "Apache-2.0/MIT"
 name = "monto"
 version = "0.1.0"
