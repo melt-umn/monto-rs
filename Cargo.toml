@@ -8,7 +8,7 @@ name = "monto"
 version = "0.1.0"
 
 [badges]
-appveyor = { repository = "melt-umn/monto-rs" }
+appveyor = { repository = "remexre/monto-rs" }
 travis-ci = { repository = "melt-umn/monto-rs" }
 
 [[bin]]
