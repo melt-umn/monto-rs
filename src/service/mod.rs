@@ -11,11 +11,12 @@ mod serve;
 
 use std::collections::BTreeMap;
 
+use serde_json::Value;
 use tokio_core::reactor::Handle;
 
 use common::messages::{Product, ProductDescriptor, ProtocolVersion};
 use self::config::Config;
-use self::messages::{ServiceErrors, ServiceNegotiation, ServiceProduct};
+use self::messages::{ServiceError, ServiceNegotiation, ServiceNotice};
 pub use self::serve::ServeFuture;
 
 /// A Service and the associated HTTP server.
@@ -61,5 +62,5 @@ pub trait ServiceProvider {
     fn descriptor(&self) -> ProductDescriptor;
 
     /// The function that actually runs the service.
-    fn service(&mut self, path: &str, products: Vec<Product>) -> Result<ServiceProduct, ServiceErrors>;
+    fn service(&mut self, path: &str, products: Vec<Product>) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>);
 }

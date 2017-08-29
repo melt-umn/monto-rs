@@ -13,8 +13,8 @@ use tokio_core::reactor::Handle;
 use void::Void;
 
 use common::{error_response, json_request, json_response};
-use common::messages::ProductDescriptor;
-use service::messages::{BrokerRequest, ServiceBrokerNegotiation};
+use common::messages::{Product, ProductDescriptor};
+use service::messages::{BrokerRequest, ServiceBrokerNegotiation, ServiceErrors, ServiceProduct};
 use super::Service;
 
 impl Service {
@@ -82,11 +82,20 @@ impl HyperService for Broker {
                     let descriptor: ProductDescriptor = request.clone().into();
                     let mut service = service.borrow_mut();
                     if let Some(provider) = service.funcs.get_mut(&descriptor) {
-                        match provider.service(&request.path, products) {
-                            Ok(sp) => json_response(sp, StatusCode::Ok),
-                            Err(errs) => {
-                                error!("{:?}", errs);
-                                json_response(errs, StatusCode::InternalServerError)
+                        let (r, notices) = provider.service(&request.path, products);
+                        match r {
+                            Ok(val) => json_response(ServiceProduct {
+                                product: Product {
+                                    name: descriptor.name,
+                                    language: descriptor.language,
+                                    path: request.path,
+                                    value: val,
+                                },
+                                notices: notices,
+                            }, StatusCode::Ok),
+                            Err(errors) => {
+                                error!("{:?}", errors);
+                                json_response(ServiceErrors { errors, notices }, StatusCode::InternalServerError)
                             },
                         }
                     } else {
