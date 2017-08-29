@@ -16,10 +16,6 @@ name = "monto-broker"
 path = "src/bin/broker.rs"
 
 [[bin]]
-name = "monto-list-products"
-path = "src/bin/list-products.rs"
-
-[[bin]]
 name = "monto-simple-client"
 path = "src/bin/simple-client.rs"
 
