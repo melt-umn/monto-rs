@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate clap;
-extern crate futures;
 extern crate itertools;
 #[macro_use]
 extern crate log;
