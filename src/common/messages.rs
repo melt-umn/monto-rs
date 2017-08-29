@@ -98,6 +98,9 @@ pub enum Language {
     /// JSON, as described by [RFC 7159](https://tools.ietf.org/html/rfc7159).
     Json,
 
+    /// The language of plain UTF-8 text.
+    Text,
+
     /// The language of directories, and any other Product that does not
     /// inherently have a language.
     None,
@@ -111,6 +114,7 @@ impl Language {
     fn name(&self) -> &str {
         match *self {
             Language::Json => "json",
+            Language::Text => "text",
             Language::None => "none",
             Language::Other(ref name) => name,
         }
@@ -148,6 +152,7 @@ impl From<String> for Language {
     fn from(s: String) -> Language {
         match s.as_ref() {
             "json" => Language::Json,
+            "text" => Language::Text,
             "none" => Language::None,
             _ => Language::Other(s),
         }

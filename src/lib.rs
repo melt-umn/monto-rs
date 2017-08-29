@@ -29,6 +29,9 @@ extern crate toml;
 extern crate url;
 extern crate void;
 
+#[macro_use]
+mod macros;
+
 pub mod broker;
 pub mod client;
 pub mod common;
