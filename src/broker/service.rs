@@ -8,6 +8,7 @@ use futures::future::{err, ok, result};
 use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request, StatusCode};
 use hyper::client::HttpConnector;
 use hyper::error::UriError;
+use hyper::header::ContentType;
 use itertools::Itertools;
 use serde_json;
 use serde_json::Error as JsonError;
@@ -58,6 +59,7 @@ impl Service {
             Ok(sbn) => request.set_body(sbn),
             Err(e) => return Box::new(err(e.into())),
         }
+        request.headers_mut().set(ContentType::json());
         Box::new(client.request(request).map_err(ServiceConnectError::from).and_then(|res| {
             match res.status() {
                 StatusCode::Ok => {
@@ -100,6 +102,7 @@ impl Service {
             Ok(br) => request.set_body(br),
             Err(e) => return Box::new(err(e.into())),
         }
+        request.headers_mut().set(ContentType::json());
         Box::new(self.client.request(request)
             .map_err(RequestError::from)
             .and_then(|res| {
