@@ -3,13 +3,17 @@
 mod cache;
 mod watcher;
 
+use std::fs::File;
+use std::io::prelude::*;
+
 use futures::Future;
 use futures::future::{err, ok};
+use serde_json::Value;
 
 use broker::client::Client;
 use broker::service::{RequestError, RequestErrorKind};
 use client::messages::BrokerGetError;
-use common::messages::{Identifier, Product, ProductDescriptor, ProductIdentifier};
+use common::messages::{Identifier, Product, ProductDescriptor, ProductIdentifier, ProductName};
 pub use self::cache::Cache;
 use service::messages::{ServiceError, ServiceErrors, ServiceNotice};
 use super::Broker;
@@ -86,6 +90,26 @@ impl Client {
         };
         if let Some(si) = service {
             self.resolve(si, pi, vec![])
+        } else if pi.name == ProductName::Source {
+            let mut s = String::new();
+            let e = File::open(&pi.path)
+                .and_then(|mut f| f.read_to_string(&mut s))
+                .err();
+            if let Some(e) = e {
+                error!("{}", e);
+                Box::new(err(BrokerGetError::Unresolvable(pi)))
+            } else {
+                let p = Product {
+                    name: pi.name,
+                    language: pi.language,
+                    path: pi.path,
+                    value: Value::String(s),
+                };
+                let broker = self.0.borrow();
+                broker.cache.borrow_mut()
+                    .add(p.clone());
+                Box::new(ok(p))
+            }
         } else {
             Box::new(err(BrokerGetError::Unresolvable(pi)))
         }
