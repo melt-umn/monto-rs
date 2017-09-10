@@ -212,6 +212,7 @@ pub struct Product {
     pub path: String,
 
     /// The contents of the Product.
+    #[serde(rename = "contents")]
     pub value: Value
 }
 
