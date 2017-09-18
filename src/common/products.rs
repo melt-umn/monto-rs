@@ -6,7 +6,6 @@ use std::fs::FileType;
 use std::path::PathBuf;
 
 use serde_json::{to_value, Value};
-
 use common::messages::{Language, ProductName, Product};
 
 /// A listing of a directory.
@@ -143,6 +142,81 @@ pub enum ErrorSeverity {
 
     /// An informational message.
     Info,
+}
+
+/// Token information to be used for highlighting source code.
+///
+/// Defined in
+/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft02/#6-3-highlighting)
+/// of the specification.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all="snake_case")]
+pub struct HighlightingToken {
+    /// The first byte of the token.
+    pub start_byte: usize,
+
+    /// The last byte of the token.
+    pub end_byte: usize,
+
+    /// The color to give the token.
+    pub color: HighlightingColor,
+}
+
+/// The color to highlight a token as.
+/// 
+/// Note that the two types of highlighting may be freely mixed.
+///
+/// Defined in
+/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft02/#6-3-highlighting)
+/// of the specification.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(content="value", rename_all="snake_case", tag="type")]
+pub enum HighlightingColor {
+    /// A color from the traditional 16-color ANSI palette, which is
+    /// interpreted based on the client's theming.
+    ///
+    /// This value must be between zero and 15.
+    ///
+    /// This should be preferred for semantic highlighting.
+    Palette(u8),
+
+    /// A specific token type, which is converted to a color by the client.
+    ///
+    /// This should be preferred for syntax highlighting.
+    Token(HighlightingColorToken),
+}
+
+/// The type of a token.
+///
+/// Defined in
+/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft02/#6-3-highlighting)
+/// of the specification.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all="snake_case", untagged)]
+pub enum HighlightingColorToken {
+    /// A comment in source code.
+    Comment,
+
+    /// A function name, if possible to discern from a variable name.
+    Function,
+
+    /// A variable name.
+    Identifier,
+
+    /// A reserved keyword.
+    Keyword,
+
+    /// A literal value.
+    Literal,
+
+    /// A punctuation operator, such as `+` or `*` in a C-based language.
+    Operator,
+
+    /// Miscellaneous punctuation, such as `{` or `}` in a C-based language.
+    Punctuation,
+
+    /// A type.
+    Type,
 }
 
 /// Source code.
