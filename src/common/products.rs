@@ -1,5 +1,5 @@
 //! Products types defined by
-//! [Section 6](https://melt-umn.github.io/monto-v3-draft/draft02/#6-products)
+//! [Section 6](https://melt-umn.github.io/monto-v3-draft/draft03/#6-products)
 //! of the Monto specification.
 
 use std::fs::FileType;
@@ -11,7 +11,7 @@ use common::messages::{Language, ProductName, Product};
 /// A listing of a directory.
 ///
 /// Defined in
-/// [Section 6.1](https://melt-umn.github.io/monto-v3-draft/draft02/#6-1-directory)
+/// [Section 6.1](https://melt-umn.github.io/monto-v3-draft/draft03/#6-1-directory)
 /// of the specification.
 pub struct Directory {
     /// The path at which the directory is present.
@@ -81,7 +81,7 @@ impl From<FileType> for DirectoryEntryType {
 /// Syntactic or semantic errors detected in source code.
 ///
 /// Defined in
-/// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft02/#6-2-errors)
+/// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft03/#6-2-errors)
 /// of the specification.
 pub struct Errors {
     /// The errors detected.
@@ -108,7 +108,7 @@ impl From<Errors> for Product {
 /// A single syntactic or semantic error.
 ///
 /// Defined in
-/// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft02/#6-2-errors)
+/// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft03/#6-2-errors)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case")]
@@ -129,7 +129,7 @@ pub struct Error {
 /// The severity of an error.
 ///
 /// Defined in
-/// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft02/#6-2-errors)
+/// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft03/#6-2-errors)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
@@ -147,7 +147,7 @@ pub enum ErrorSeverity {
 /// Token information to be used for highlighting source code.
 ///
 /// Defined in
-/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft02/#6-3-highlighting)
+/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft03/#6-3-highlighting)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case")]
@@ -167,7 +167,7 @@ pub struct HighlightingToken {
 /// Note that the two types of highlighting may be freely mixed.
 ///
 /// Defined in
-/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft02/#6-3-highlighting)
+/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft03/#6-3-highlighting)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]
@@ -189,7 +189,7 @@ pub enum HighlightingColor {
 /// The type of a token.
 ///
 /// Defined in
-/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft02/#6-3-highlighting)
+/// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft03/#6-3-highlighting)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all="snake_case", untagged)]
@@ -222,7 +222,7 @@ pub enum HighlightingColorToken {
 /// Source code.
 ///
 /// Defined in
-/// [Section 6.4](https://melt-umn.github.io/monto-v3-draft/draft02/#6-4-source)
+/// [Section 6.4](https://melt-umn.github.io/monto-v3-draft/draft03/#6-4-source)
 /// of the specification.
 pub struct Source {
     /// The contents of the file.

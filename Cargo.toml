@@ -1,6 +1,6 @@
 [package]
 authors = ["Nathaniel Ringo <remexre@gmail.com>"]
-description = "A crate for the Monto protocol. This crate implements version 3.0.0-draft02 of the protocol."
+description = "A crate for the Monto protocol. This crate implements version 3.0.0-draft03 of the protocol."
 documentation = "https://docs.rs/monto"
 homepage = "https://github.com/melt-umn/monto-rs"
 license = "Apache-2.0/MIT"

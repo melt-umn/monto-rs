@@ -1,6 +1,6 @@
 //! Functions and types useful for implementing the Client Protocol, as defined
 //! in
-//! [Section 4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-the-client-protocol)
+//! [Section 4](https://melt-umn.github.io/monto-v3-draft/draft03/#4-the-client-protocol)
 //! of the specification.
 
 pub mod messages;
@@ -57,9 +57,9 @@ impl Client {
 
     /// Creates a new Client running on the given event loop with the given
     /// configuration, as specified in Sections
-    /// [4.1](https://melt-umn.github.io/monto-v3-draft/draft02/#4-1-connection-initiation)
+    /// [4.1](https://melt-umn.github.io/monto-v3-draft/draft03/#4-1-connection-initiation)
     /// and
-    /// [4.2](https://melt-umn.github.io/monto-v3-draft/draft02/#4-2-version-negotiation)
+    /// [4.2](https://melt-umn.github.io/monto-v3-draft/draft03/#4-2-version-negotiation)
     /// of the specification.
     pub fn new(config: Config, handle: Handle) -> Negotiation {
         let scheme = "http"; // TODO TLS support.
@@ -101,7 +101,7 @@ impl Client {
     }
 
     /// Attempts to retrieve a Product from the Broker, as described in
-    /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-4-requesting-products)
+    /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft03/#4-4-requesting-products)
     /// of the specification.
     pub fn request(&mut self, service: &Identifier, pi: &ProductIdentifier) -> Box<Future<Item=Product, Error=RequestError>> {
         let path: &Path = pi.path.as_ref();
@@ -183,7 +183,7 @@ impl Client {
     }
 
     /// Sends a Product to the Broker, as described in
-    /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-3-sending-products)
+    /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft03/#4-3-sending-products)
     /// of the specification.
     pub fn send_product<P: Into<Product>>(&mut self, p: P) -> Box<Future<Item=(), Error=SendError>> {
         let Product { language, name, path, value } = p.into();
@@ -232,14 +232,14 @@ pub struct Config {
     /// The host to connect to the Broker on.
     ///
     /// Defaults to `localhost`, as per
-    /// [Section 4.1](https://melt-umn.github.io/monto-v3-draft/draft02/#4-1-connection-initiation)
+    /// [Section 4.1](https://melt-umn.github.io/monto-v3-draft/draft03/#4-1-connection-initiation)
     /// of the specification.
     pub host: String,
 
     /// The port to connect to the Broker on.
     ///
     /// Defaults to `28888`, as per
-    /// [Section 4.1](https://melt-umn.github.io/monto-v3-draft/draft02/#4-1-connection-initiation)
+    /// [Section 4.1](https://melt-umn.github.io/monto-v3-draft/draft03/#4-1-connection-initiation)
     /// of the specification.
     pub port: u16,
 

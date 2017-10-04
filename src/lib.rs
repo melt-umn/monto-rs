@@ -1,5 +1,5 @@
-//! A crate for the Monto protocol. This crate implements version 3.0.0-draft02 of the protocol,
-//! which is specified [here](https://melt-umn.github.io/monto-v3-draft/draft02).
+//! A crate for the Monto protocol. This crate implements version 3.0.0-draft03 of the protocol,
+//! which is specified [here](https://melt-umn.github.io/monto-v3-draft/draft03).
 
 #![deny(missing_docs)]
 

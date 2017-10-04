@@ -1,5 +1,5 @@
 //! The Messages specific to the Client Protocol, as described in
-//! [Section 4.5](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-client-protocol-messages)
+//! [Section 4.5](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-client-protocol-messages)
 //! of the specification.
 
 use std::collections::BTreeSet;
@@ -12,7 +12,7 @@ use service::messages::ServiceNegotiation;
 /// The Message that a Client sends to a Broker during version negotiation.
 ///
 /// Defined in
-/// [Section 4.5.1](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-1-clientnegotiation)
+/// [Section 4.5.1](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-1-clientnegotiation)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ClientNegotiation {
@@ -30,7 +30,7 @@ pub struct ClientNegotiation {
 /// The Message that a Broker sends to a Client during version negotiation.
 ///
 /// Defined in
-/// [Section 4.5.2](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-2-clientbrokernegotiation)
+/// [Section 4.5.2](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-2-clientbrokernegotiation)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ClientBrokerNegotiation {
@@ -59,7 +59,7 @@ pub enum ClientExtension {
 /// An error that occurs during the sending of a product from a Client to the Broker.
 ///
 /// Defined in
-/// [Section 4.5.3](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-3-brokerputerror)
+/// [Section 4.5.3](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-3-brokerputerror)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]
@@ -87,7 +87,7 @@ impl Error for BrokerPutError {
 /// An error that occurs during the requesting of a product by a Client.
 ///
 /// Defined in
-/// [Section 4.5.4](https://melt-umn.github.io/monto-v3-draft/draft02/#4-5-4-brokergeterror)
+/// [Section 4.5.4](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-4-brokergeterror)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]

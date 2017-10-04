@@ -1,5 +1,5 @@
 //! The Messages specific to the Service Protocol, as described in
-//! [Section 5.4](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-service-protocol-messages)
+//! [Section 5.4](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-service-protocol-messages)
 //! of the specification.
 
 use std::collections::BTreeSet;
@@ -9,7 +9,7 @@ use common::messages::{Product, ProductDescriptor, ProductIdentifier, ProtocolVe
 /// The Message that a Broker sends to a Service during version negotiation.
 ///
 /// Defined in
-/// [Section 5.4.1](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-1-servicebrokernegotiation)
+/// [Section 5.4.1](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-1-servicebrokernegotiation)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ServiceBrokerNegotiation {
@@ -27,7 +27,7 @@ pub struct ServiceBrokerNegotiation {
 /// The Message that a Service sends to a Broker during version negotiation.
 ///
 /// Defined in
-/// [Section 5.4.2](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-2-servicenegotiation)
+/// [Section 5.4.2](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-2-servicenegotiation)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ServiceNegotiation {
@@ -56,7 +56,7 @@ pub enum ServiceExtension {
 /// The Message that a Service sends to a Broker during version negotiation.
 ///
 /// Defined in
-/// [Section 5.4.3](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-3-brokerrequest)
+/// [Section 5.4.3](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-3-brokerrequest)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct BrokerRequest {
@@ -70,7 +70,7 @@ pub struct BrokerRequest {
 /// Errors encountered by a Service.
 ///
 /// Defined in
-/// [Section 5.4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-4-serviceerrors)
+/// [Section 5.4.4](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-4-serviceerrors)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ServiceErrors {
@@ -84,7 +84,7 @@ pub struct ServiceErrors {
 /// A single error in a ServiceErrors.
 ///
 /// Defined in
-/// [Section 5.4.4](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-4-serviceerrors)
+/// [Section 5.4.4](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-4-serviceerrors)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]
@@ -99,7 +99,7 @@ pub enum ServiceError {
 /// A response containing a Product from a Service to be returned the Broker.
 ///
 /// Defined in
-/// [Section 5.4.5](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-5-serviceproduct)
+/// [Section 5.4.5](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-5-serviceproduct)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ServiceProduct {
@@ -113,7 +113,7 @@ pub struct ServiceProduct {
 /// A message from a Broker to the Service signalling a non-error special condition.
 ///
 /// Defined in
-/// [Section 5.4.6](https://melt-umn.github.io/monto-v3-draft/draft02/#5-4-6-servicenotice)
+/// [Section 5.4.6](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-6-servicenotice)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(content="value", rename_all="snake_case", tag="type")]

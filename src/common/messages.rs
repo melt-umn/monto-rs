@@ -1,5 +1,5 @@
 //! The Messages common to both the Client and Service Protocols, as described in
-//! [Section 3.1](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-common-messages)
+//! [Section 3.1](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-common-messages)
 //! of the specification.
 
 use std::cmp::Ordering;
@@ -16,7 +16,7 @@ use serde_json::Value;
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
 ///
 /// Defined in
-/// [Section 3.1.1](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-1-identifier)
+/// [Section 3.1.1](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-1-identifier)
 /// of the specification.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Identifier {
@@ -169,7 +169,7 @@ impl Serialize for Language {
 /// A name after a dotted identifier.
 ///
 /// Defined in
-/// [Section 3.1.2](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-2-namespacedname)
+/// [Section 3.1.2](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-2-namespacedname)
 /// of the specification.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct NamespacedName {
@@ -198,7 +198,7 @@ impl Serialize for NamespacedName {
 /// A Product, along with its contents.
 ///
 /// Defined in
-/// [Section 3.1.3](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-3-product)
+/// [Section 3.1.3](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-3-product)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Product {
@@ -219,7 +219,7 @@ pub struct Product {
 /// A Product's name and language.
 ///
 /// Defined in
-/// [Section 3.1.4](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-4-productdescriptor)
+/// [Section 3.1.4](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-4-productdescriptor)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProductDescriptor {
@@ -242,7 +242,7 @@ impl From<ProductIdentifier> for ProductDescriptor {
 /// A Product's name, language, and path.
 ///
 /// Defined in
-/// [Section 3.1.5](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-5-productidentifier)
+/// [Section 3.1.5](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-5-productidentifier)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProductIdentifier {
@@ -279,7 +279,7 @@ impl<'a> From<&'a Product> for ProductIdentifier {
 /// The name of a Product.
 ///
 /// Defined in
-/// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-6-productname)
+/// [Section 3.1.6](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-6-productname)
 /// of the specification.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ProductName {
@@ -355,7 +355,7 @@ impl Serialize for ProductName {
 /// The version number of the Client or Server Protocol.
 ///
 /// Defined in
-/// [Section 3.1.7](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-7-protocolversion)
+/// [Section 3.1.7](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-7-protocolversion)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ProtocolVersion {
@@ -419,7 +419,7 @@ impl PartialOrd for ProtocolVersion {
 /// The version and implementation of a Client, Broker, or Service.
 ///
 /// Defined in
-/// [Section 3.1.8](https://melt-umn.github.io/monto-v3-draft/draft02/#3-1-8-softwareversion)
+/// [Section 3.1.8](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-8-softwareversion)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SoftwareVersion {
