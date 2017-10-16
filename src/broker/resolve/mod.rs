@@ -20,7 +20,12 @@ use super::Broker;
 
 impl Client {
     /// Fully resolves a product request, including doing dependency resolution.
-    pub fn resolve(self, si: Identifier, pi: ProductIdentifier, mut ps: Vec<Product>) -> Box<Future<Item=Product, Error=BrokerGetError>> {
+    pub fn resolve(
+        self,
+        si: Identifier,
+        pi: ProductIdentifier,
+        mut ps: Vec<Product>,
+    ) -> Box<Future<Item = Product, Error = BrokerGetError>> {
         let self2 = self.clone();
         let broker = self2.0.borrow();
         info!("getting {:?} from {}", pi, si);
@@ -39,11 +44,8 @@ impl Client {
                                     service: si,
                                     error: e.to_string(),
                                 }))
-                            },
-                            RequestErrorKind::ServiceErrors(ServiceErrors {
-                                errors,
-                                notices,
-                            }) => {
+                            }
+                            RequestErrorKind::ServiceErrors(ServiceErrors { errors, notices }) => {
                                 for ServiceNotice::UnusedDependency(pi) in notices {
                                     let idx = ps.iter()
                                         .cloned()
@@ -56,15 +58,15 @@ impl Client {
                                     }
                                 }
                                 self.resolve_next(si, pi, ps, errors)
-                            },
+                            }
                             _ => {
                                 Box::new(err(BrokerGetError::ServiceError {
                                     service: si,
                                     error: e.to_string(),
                                 }))
-                            },
+                            }
                         }
-                    },
+                    }
                 }))
             } else {
                 Box::new(err(BrokerGetError::NoSuchService))
@@ -73,7 +75,10 @@ impl Client {
     }
 
     /// Resolves from any service.
-    fn resolve_dep(self, pi: ProductIdentifier) -> Box<Future<Item=Product, Error=BrokerGetError>> {
+    fn resolve_dep(
+        self,
+        pi: ProductIdentifier,
+    ) -> Box<Future<Item = Product, Error = BrokerGetError>> {
         let service = {
             let broker = self.0.borrow();
             if let Some(gp) = broker.from_cache(pi.clone()) {
@@ -83,7 +88,9 @@ impl Client {
                     name: pi.name.clone(),
                     language: pi.language.clone(),
                 };
-                broker.services.iter()
+                broker
+                    .services
+                    .iter()
                     .find(|s| s.negotiation.products.contains(&pd))
                     .map(|s| s.negotiation.service.id.clone())
             }
@@ -106,8 +113,7 @@ impl Client {
                     value: Value::String(s),
                 };
                 let broker = self.0.borrow();
-                broker.cache.borrow_mut()
-                    .add(p.clone());
+                broker.cache.borrow_mut().add(p.clone());
                 Box::new(ok(p))
             }
         } else {
@@ -116,7 +122,13 @@ impl Client {
     }
 
     /// Handles the error case of resolve.
-    fn resolve_next(self, si: Identifier, pi: ProductIdentifier, mut ps: Vec<Product>, mut es: Vec<ServiceError>) -> Box<Future<Item=Product, Error=BrokerGetError>> {
+    fn resolve_next(
+        self,
+        si: Identifier,
+        pi: ProductIdentifier,
+        mut ps: Vec<Product>,
+        mut es: Vec<ServiceError>,
+    ) -> Box<Future<Item = Product, Error = BrokerGetError>> {
         if let Some(se) = es.pop() {
             match se {
                 ServiceError::UnmetDependency(pi2) => {
@@ -124,13 +136,13 @@ impl Client {
                         ps.push(p);
                         self.resolve_next(si, pi, ps, es)
                     }))
-                },
+                }
                 ServiceError::Other(s) => {
                     Box::new(err(BrokerGetError::ServiceError {
                         service: si,
                         error: s,
                     }))
-                },
+                }
             }
         } else {
             self.resolve(si, pi, ps)

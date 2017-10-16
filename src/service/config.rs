@@ -76,28 +76,35 @@ impl Config {
             Err(e) => {
                 error!("Failed to load config from current directory: {}", e);
                 match Directories::with_prefix(name, name) {
-                    Ok(dirs) => match Config::load_one(dirs.config_home(), name) {
-                        Ok(c) => return c,
-                        Err(e) => {
-                            error!("Failed to load config from config directory: {}", e);
-                            match home_dir() {
-                                Some(home_dir) => match Config::load_one(home_dir, name) {
-                                    Ok(c) => return c,
-                                    Err(e) => {
-                                        error!("Failed to load config from home directory: {}", e);
-                                    },
-                                },
-                                None => error!("Could not identify home directory"),
+                    Ok(dirs) => {
+                        match Config::load_one(dirs.config_home(), name) {
+                            Ok(c) => return c,
+                            Err(e) => {
+                                error!("Failed to load config from config directory: {}", e);
+                                match home_dir() {
+                                    Some(home_dir) => {
+                                        match Config::load_one(home_dir, name) {
+                                            Ok(c) => return c,
+                                            Err(e) => {
+                                                error!(
+                                                    "Failed to load config from home directory: {}",
+                                                    e
+                                                );
+                                            }
+                                        }
+                                    }
+                                    None => error!("Could not identify home directory"),
+                                }
                             }
-                        },
-                    },
+                        }
+                    }
                     Err(e) => {
                         error!("Failed to find config directory: {}", e);
-                    },
+                    }
                 }
                 warn!("Couldn't find config, loading defaults.");
                 Config::default()
-            },
+            }
         }
     }
 
@@ -126,8 +133,9 @@ impl Config {
         path.set_extension("toml");
 
         // Open the file.
-        let mut f = File::open(&path)
-            .chain_err(|| ErrorKind::CouldntFindConfig(path.clone()))?;
+        let mut f = File::open(&path).chain_err(|| {
+            ErrorKind::CouldntFindConfig(path.clone())
+        })?;
 
         // Create a buffer to store the file, and read the file into it.
         let mut buf = Vec::new();
@@ -232,7 +240,9 @@ impl Default for VersionConfig {
     fn default() -> VersionConfig {
         let random = 0; // TODO
         VersionConfig {
-            id: format!("edu.umn.cs.melt.monto.servicelib{:08x}", random).parse().unwrap(),
+            id: format!("edu.umn.cs.melt.monto.servicelib{:08x}", random)
+                .parse()
+                .unwrap(),
             name: "Reference Implementation Service Library".to_owned(),
             vendor: "Minnesota Extensible Language Tools".to_owned(),
             major: 0,

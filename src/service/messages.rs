@@ -4,7 +4,8 @@
 
 use std::collections::BTreeSet;
 
-use common::messages::{Product, ProductDescriptor, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
+use common::messages::{Product, ProductDescriptor, ProductIdentifier, ProtocolVersion,
+                       SoftwareVersion, NamespacedName};
 
 /// The Message that a Broker sends to a Service during version negotiation.
 ///
@@ -20,7 +21,7 @@ pub struct ServiceBrokerNegotiation {
     pub broker: SoftwareVersion,
 
     /// The extensions that are supported by the Broker.
-    #[serde(default, skip_serializing_if="BTreeSet::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub extensions: BTreeSet<ServiceExtension>,
 }
 
@@ -38,7 +39,7 @@ pub struct ServiceNegotiation {
     pub service: SoftwareVersion,
 
     /// The extensions that are supported by the Service.
-    #[serde(default, skip_serializing_if="BTreeSet::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub extensions: BTreeSet<ServiceExtension>,
 
     /// The Products the Service can produce.
@@ -47,7 +48,7 @@ pub struct ServiceNegotiation {
 
 /// An extension to the Service Protocol.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[serde(rename_all = "snake_case", untagged)]
 pub enum ServiceExtension {
     /// An unknown and unsupported extension.
     Unknown(NamespacedName),
@@ -87,7 +88,7 @@ pub struct ServiceErrors {
 /// [Section 5.4.4](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-4-serviceerrors)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(content="value", rename_all="snake_case", tag="type")]
+#[serde(content = "value", rename_all = "snake_case", tag = "type")]
 pub enum ServiceError {
     /// An error representing a dependency not being present.
     UnmetDependency(ProductIdentifier),
@@ -116,7 +117,7 @@ pub struct ServiceProduct {
 /// [Section 5.4.6](https://melt-umn.github.io/monto-v3-draft/draft03/#5-4-6-servicenotice)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(content="value", rename_all="snake_case", tag="type")]
+#[serde(content = "value", rename_all = "snake_case", tag = "type")]
 pub enum ServiceNotice {
     /// A notice that a dependency was unused when producing a Product.
     UnusedDependency(ProductIdentifier),

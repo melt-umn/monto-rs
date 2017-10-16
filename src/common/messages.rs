@@ -20,8 +20,8 @@ use serde_json::Value;
 /// of the specification.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Identifier {
-	namespace: Vec<String>,
-	name: String,
+    namespace: Vec<String>,
+    name: String,
 }
 
 impl<'de> Deserialize<'de> for Identifier {
@@ -32,7 +32,10 @@ impl<'de> Deserialize<'de> for Identifier {
         impl<'de> Visitor<'de> for IdentifierVisitor {
             type Value = Identifier;
             fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                write!(fmt, "a reverse-hostname-style dotted identifier with at least two components")
+                write!(
+                    fmt,
+                    "a reverse-hostname-style dotted identifier with at least two components"
+                )
             }
 
             fn visit_str<E: Error>(self, v: &str) -> Result<Self::Value, E> {
@@ -58,12 +61,12 @@ impl<'de> Deserialize<'de> for Identifier {
 }
 
 impl Display for Identifier {
-	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-		for c in &self.namespace {
-			write!(fmt, "{}.", c)?;
-		}
-		write!(fmt, "{}", self.name)
-	}
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        for c in &self.namespace {
+            write!(fmt, "{}.", c)?;
+        }
+        write!(fmt, "{}", self.name)
+    }
 }
 
 impl FromStr for Identifier {
@@ -95,6 +98,9 @@ impl Serialize for Identifier {
 /// The programming language associated with a Product.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Language {
+    /// C, as described by [ISO/IEC 9899](https://www.iso.org/standard/57853.html).
+    C,
+
     /// JSON, as described by [RFC 7159](https://tools.ietf.org/html/rfc7159).
     Json,
 
@@ -113,6 +119,7 @@ impl Language {
     /// The name of the language, as a string.
     fn name(&self) -> &str {
         match *self {
+            Language::C => "c",
             Language::Json => "json",
             Language::Text => "text",
             Language::None => "none",
@@ -123,7 +130,8 @@ impl Language {
 
 impl<'de> Deserialize<'de> for Language {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         struct V;
         impl<'de> Visitor<'de> for V {
@@ -143,9 +151,9 @@ impl<'de> Deserialize<'de> for Language {
 }
 
 impl Display for Language {
-	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         write!(fmt, "{}", self.name())
-	}
+    }
 }
 
 impl From<String> for Language {
@@ -184,9 +192,9 @@ impl<'de> Deserialize<'de> for NamespacedName {
 }
 
 impl Display for NamespacedName {
-	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-		write!(fmt, "{}/{}", self.namespace, self.name)
-	}
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        write!(fmt, "{}/{}", self.namespace, self.name)
+    }
 }
 
 impl Serialize for NamespacedName {
@@ -213,7 +221,7 @@ pub struct Product {
 
     /// The contents of the Product.
     #[serde(rename = "contents")]
-    pub value: Value
+    pub value: Value,
 }
 
 /// A Product's name and language.
@@ -301,7 +309,8 @@ pub enum ProductName {
 
 impl<'de> Deserialize<'de> for ProductName {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         struct V;
         impl<'de> Visitor<'de> for V {
@@ -320,7 +329,7 @@ impl<'de> Deserialize<'de> for ProductName {
 }
 
 impl Display for ProductName {
-	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
             ProductName::Directory => write!(fmt, "directory"),
             ProductName::Errors => write!(fmt, "errors"),
@@ -328,7 +337,7 @@ impl Display for ProductName {
             ProductName::Source => write!(fmt, "source"),
             ProductName::Other(ref ident) => ident.fmt(fmt),
         }
-	}
+    }
 }
 
 impl FromStr for ProductName {
@@ -373,7 +382,9 @@ impl ProtocolVersion {
     /// Creates a new ProtocolVersion.
     pub fn new(major: u64, minor: u64, patch: u64) -> ProtocolVersion {
         ProtocolVersion {
-            major, minor, patch,
+            major,
+            minor,
+            patch,
         }
     }
 
@@ -454,7 +465,7 @@ impl Display for SoftwareVersion {
             (&Some(ref name), &Some(ref vendor)) => write!(fmt, " ({} by {})", name, vendor)?,
             (&Some(ref name), &None) => write!(fmt, " ({})", name)?,
             (&None, &Some(ref vendor)) => write!(fmt, " by {}", vendor)?,
-            (&None, &None) => {},
+            (&None, &None) => {}
         }
         write!(fmt, " {}.{}.{}", self.major, self.minor, self.patch)
     }

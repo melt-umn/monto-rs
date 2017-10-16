@@ -22,13 +22,13 @@ fn main() {
     info!("Using config {:?}", config);
 
     // Create the I/O loop.
-    let mut core = Core::new()
-        .expect("Couldn't create event loop");
+    let mut core = Core::new().expect("Couldn't create event loop");
 
     // Create the Broker and connect to services.
     let handle = core.handle();
-    let broker = core.run(Broker::new(config, handle))
-        .expect("Couldn't initialize Broker");
+    let broker = core.run(Broker::new(config, handle)).expect(
+        "Couldn't initialize Broker",
+    );
 
     // Run the Broker, listening for clients.
     let r = core.run(broker.serve_forever());

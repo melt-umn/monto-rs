@@ -6,7 +6,8 @@ use std::rc::Rc;
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 use std::time::Duration;
 
-use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, RecursiveMode, Watcher as NotifyWatcher};
+use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, RecursiveMode,
+             Watcher as NotifyWatcher};
 use serde_json::Value;
 use tokio_core::reactor::Handle;
 
@@ -41,9 +42,11 @@ impl Cache {
         match self.watch_chan.try_recv() {
             Ok(ev) => Some(ev),
             Err(TryRecvError::Disconnected) => {
-                error!("The filesystem watcher died; https://twitter.com/rob_pike/status/447202124753952768");
+                error!(
+                    "The filesystem watcher died; https://twitter.com/rob_pike/status/447202124753952768"
+                );
                 None
-            },
+            }
             Err(TryRecvError::Empty) => None,
         }
     }
@@ -51,12 +54,18 @@ impl Cache {
     /// Adds a product to the cache, replacing any other product that was
     /// previously present.
     pub fn add(&mut self, product: Product) {
-        let Product { name, language, path, value } = product;
+        let Product {
+            name,
+            language,
+            path,
+            value,
+        } = product;
         info!("Added to cache: {} {} {}", name, language, path);
 
         let desc = ProductDescriptor { name, language };
         let path = PathBuf::from(path);
-        self.products.entry(path.clone())
+        self.products
+            .entry(path.clone())
             .or_insert_with(BTreeMap::new)
             .insert(desc, value);
         if self.watching.insert(path.clone()) {
@@ -82,13 +91,19 @@ impl Cache {
 
         let path = PathBuf::from(&pi.path);
         self.products.get(&path).and_then(move |m| {
-            let ProductIdentifier { language, name, path } = pi;
+            let ProductIdentifier {
+                language,
+                name,
+                path,
+            } = pi;
             let pd = ProductDescriptor { language, name };
-            m.get(&pd).map(move |value| Product {
-                language: pd.language,
-                name: pd.name,
-                path: path,
-                value: value.clone(),
+            m.get(&pd).map(move |value| {
+                Product {
+                    language: pd.language,
+                    name: pd.name,
+                    path: path,
+                    value: value.clone(),
+                }
             })
         })
     }

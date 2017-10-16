@@ -16,31 +16,42 @@ use serde_json;
 use serde_json::error::Error as SerdeError;
 
 /// Creates an error response.
-pub fn error_response(status: StatusCode) -> Box<Future<Item=Response<Body>, Error=HyperError>> {
+pub fn error_response(
+    status: StatusCode,
+) -> Box<Future<Item = Response<Body>, Error = HyperError>> {
     let res = status.to_string();
-    Box::new(ok(Response::new()
-        .with_status(status)
-        .with_header(ContentLength(res.len() as u64))
-        .with_header(ContentType("text/plain".parse().unwrap()))
-        .with_body(res)))
+    Box::new(ok(
+        Response::new()
+            .with_status(status)
+            .with_header(ContentLength(res.len() as u64))
+            .with_header(ContentType("text/plain".parse().unwrap()))
+            .with_body(res),
+    ))
 }
 
 /// Deserializes an object as JSON from the request.
-pub fn json_request<T: DeserializeOwned + 'static>(body: Body) -> Box<Future<Item=T, Error=Either<HyperError, SerdeError>>> {
-    Box::new(body.concat2()
-        .map_err(Left)
-        .and_then(|bs| serde_json::from_slice(&*bs).map_err(Right)))
+pub fn json_request<T: DeserializeOwned + 'static>(
+    body: Body,
+) -> Box<Future<Item = T, Error = Either<HyperError, SerdeError>>> {
+    Box::new(body.concat2().map_err(Left).and_then(|bs| {
+        serde_json::from_slice(&*bs).map_err(Right)
+    }))
 }
 
 /// Converts an object to JSON and serves it as a Response.
-pub fn json_response<T: Serialize>(t: T, status: StatusCode) -> Box<Future<Item=Response<Body>, Error=Either<HyperError, SerdeError>>> {
+pub fn json_response<T: Serialize>(
+    t: T,
+    status: StatusCode,
+) -> Box<Future<Item = Response<Body>, Error = Either<HyperError, SerdeError>>> {
     let res = match serde_json::to_string(&t) {
         Ok(s) => s,
         Err(e) => return Box::new(err(Right(e))),
     };
-    Box::new(ok(Response::new()
-        .with_status(status)
-        .with_header(ContentLength(res.len() as u64))
-        .with_header(ContentType("application/json".parse().unwrap()))
-        .with_body(res)))
+    Box::new(ok(
+        Response::new()
+            .with_status(status)
+            .with_header(ContentLength(res.len() as u64))
+            .with_header(ContentType("application/json".parse().unwrap()))
+            .with_body(res),
+    ))
 }

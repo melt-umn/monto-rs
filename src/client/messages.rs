@@ -6,7 +6,8 @@ use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use common::messages::{Identifier, ProductIdentifier, ProtocolVersion, SoftwareVersion, NamespacedName};
+use common::messages::{Identifier, ProductIdentifier, ProtocolVersion, SoftwareVersion,
+                       NamespacedName};
 use service::messages::ServiceNegotiation;
 
 /// The Message that a Client sends to a Broker during version negotiation.
@@ -23,7 +24,7 @@ pub struct ClientNegotiation {
     pub client: SoftwareVersion,
 
     /// The extensions that are supported by the Client.
-    #[serde(default, skip_serializing_if="BTreeSet::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub extensions: BTreeSet<ClientExtension>,
 }
 
@@ -41,7 +42,7 @@ pub struct ClientBrokerNegotiation {
     pub broker: SoftwareVersion,
 
     /// The extensions that are supported by the Broker.
-    #[serde(default, skip_serializing_if="BTreeSet::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub extensions: BTreeSet<ClientExtension>,
 
     /// The services the Broker has connected to.
@@ -50,7 +51,7 @@ pub struct ClientBrokerNegotiation {
 
 /// An extension to the Client Protocol.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[serde(rename_all = "snake_case", untagged)]
 pub enum ClientExtension {
     /// An unknown and unsupported extension.
     Unknown(NamespacedName),
@@ -62,7 +63,7 @@ pub enum ClientExtension {
 /// [Section 4.5.3](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-3-brokerputerror)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(content="value", rename_all="snake_case", tag="type")]
+#[serde(content = "value", rename_all = "snake_case", tag = "type")]
 pub enum BrokerPutError {
     /// A language was not provided, and it could not be detected by the Broker.
     NoLanguage,
@@ -71,7 +72,11 @@ pub enum BrokerPutError {
 impl Display for BrokerPutError {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
-            BrokerPutError::NoLanguage => fmt.write_str("No language was provided, and it could not be detected by the Broker."),
+            BrokerPutError::NoLanguage => {
+                fmt.write_str(
+                    "No language was provided, and it could not be detected by the Broker.",
+                )
+            }
         }
     }
 }
@@ -79,7 +84,9 @@ impl Display for BrokerPutError {
 impl Error for BrokerPutError {
     fn description(&self) -> &str {
         match *self {
-            BrokerPutError::NoLanguage => "No language was provided, and it could not be detected by the Broker.",
+            BrokerPutError::NoLanguage => {
+                "No language was provided, and it could not be detected by the Broker."
+            }
         }
     }
 }
@@ -90,7 +97,7 @@ impl Error for BrokerPutError {
 /// [Section 4.5.4](https://melt-umn.github.io/monto-v3-draft/draft03/#4-5-4-brokergeterror)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(content="value", rename_all="snake_case", tag="type")]
+#[serde(content = "value", rename_all = "snake_case", tag = "type")]
 pub enum BrokerGetError {
     /// A Product was requested from a nonexistent Service.
     NoSuchService,
@@ -123,8 +130,12 @@ pub enum BrokerGetError {
 impl Display for BrokerGetError {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
-            BrokerGetError::NoSuchService => fmt.write_str("A Product was requested from a nonexistent Service"),
-            BrokerGetError::NoSuchProduct => fmt.write_str("A Product was requested that the Service does not expose"),
+            BrokerGetError::NoSuchService => {
+                fmt.write_str("A Product was requested from a nonexistent Service")
+            }
+            BrokerGetError::NoSuchProduct => {
+                fmt.write_str("A Product was requested that the Service does not expose")
+            }
             BrokerGetError::ServiceError {
                 ref service,
                 ref error,
@@ -133,7 +144,9 @@ impl Display for BrokerGetError {
                 ref service,
                 ref error,
             } => write!(fmt, "When connecting to service {}: {}", service, error),
-            BrokerGetError::Unresolvable(ref pi) => write!(fmt, "A product was unresolvable: {:?}", pi),
+            BrokerGetError::Unresolvable(ref pi) => {
+                write!(fmt, "A product was unresolvable: {:?}", pi)
+            }
         }
     }
 }
@@ -142,7 +155,9 @@ impl Error for BrokerGetError {
     fn description(&self) -> &str {
         match *self {
             BrokerGetError::NoSuchService => "A Product was requested from a nonexistent Service",
-            BrokerGetError::NoSuchProduct => "A Product was requested that the Service does not expose",
+            BrokerGetError::NoSuchProduct => {
+                "A Product was requested that the Service does not expose"
+            }
             BrokerGetError::ServiceError { .. } => "An error from a service",
             BrokerGetError::ServiceConnectError { .. } => "An error trying to connect to a Service",
             BrokerGetError::Unresolvable(_) => "A product was unresolvable",

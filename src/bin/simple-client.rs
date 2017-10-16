@@ -53,15 +53,13 @@ fn main() {
     }).unwrap();
 
     // Create the I/O loop.
-    let mut core = Core::new()
-        .expect("Couldn't create event loop");
+    let mut core = Core::new().expect("Couldn't create event loop");
 
     // Connect to the Broker.
     let config = Config {
-        host: matches.value_of("host")
-            .unwrap_or("127.0.0.1")
-            .to_string(),
-        port: matches.value_of("port")
+        host: matches.value_of("host").unwrap_or("127.0.0.1").to_string(),
+        port: matches
+            .value_of("port")
             .map(|s| s.parse())
             .map(must)
             .unwrap_or(28888),
@@ -84,7 +82,7 @@ fn main() {
         _ => {
             eprintln!("{}", matches.usage());
             exit(1);
-        },
+        }
     }
 }
 
@@ -94,7 +92,7 @@ fn must<T, E: Display>(r: Result<T, E>) -> T {
         Err(err) => {
             error!("{}", err);
             exit(-2);
-        },
+        }
     }
 }
 
@@ -102,8 +100,7 @@ fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
     // Get the arguments as strings.
     let service = args.value_of("service").unwrap();
     let product = args.value_of("product").unwrap();
-    let language: Language = args.value_of("language").unwrap()
-        .to_string().into();
+    let language: Language = args.value_of("language").unwrap().to_string().into();
     let path = args.value_of("path").unwrap();
 
     // Parse the arguments.
@@ -129,8 +126,11 @@ fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
 }
 
 fn list(_args: &ArgMatches, client: Client, _core: Core) {
-    let products = client.products()
-        .map(|(i, d)| (i.to_string(), d.language.to_string(), d.name.to_string()))
+    let products = client
+        .products()
+        .map(|(i, d)| {
+            (i.to_string(), d.language.to_string(), d.name.to_string())
+        })
         .sorted()
         .into_iter()
         .group_by(|&(ref s, _, _)| s.clone());

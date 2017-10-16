@@ -5,7 +5,7 @@ documentation = "https://docs.rs/monto"
 homepage = "https://github.com/melt-umn/monto-rs"
 license = "Apache-2.0/MIT"
 name = "monto"
-version = "0.1.6"
+version = "0.1.7"
 
 [badges]
 appveyor = { repository = "remexre/monto-rs" }

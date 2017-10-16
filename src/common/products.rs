@@ -43,13 +43,13 @@ pub struct DirectoryEntry {
     pub absolute_path: PathBuf,
 
     /// The type of the entry.
-    #[serde(rename="type")]
+    #[serde(rename = "type")]
     pub file_type: DirectoryEntryType,
 }
 
 /// The type of a directory entry.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[serde(rename_all = "snake_case", untagged)]
 pub enum DirectoryEntryType {
     /// A regular file.
     File,
@@ -111,7 +111,7 @@ impl From<Errors> for Product {
 /// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft03/#6-2-errors)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case")]
+#[serde(rename_all = "snake_case")]
 pub struct Error {
     /// The error message.
     pub message: String,
@@ -132,7 +132,7 @@ pub struct Error {
 /// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft03/#6-2-errors)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[serde(rename_all = "snake_case", untagged)]
 pub enum ErrorSeverity {
     /// A fatal error.
     Error,
@@ -150,7 +150,7 @@ pub enum ErrorSeverity {
 /// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft03/#6-3-highlighting)
 /// of the specification.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case")]
+#[serde(rename_all = "snake_case")]
 pub struct HighlightingToken {
     /// The first byte of the token.
     pub start_byte: usize,
@@ -163,14 +163,14 @@ pub struct HighlightingToken {
 }
 
 /// The color to highlight a token as.
-/// 
+///
 /// Note that the two types of highlighting may be freely mixed.
 ///
 /// Defined in
 /// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft03/#6-3-highlighting)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(content="value", rename_all="snake_case", tag="type")]
+#[serde(content = "value", rename_all = "snake_case", tag = "type")]
 pub enum HighlightingColor {
     /// A color from the traditional 16-color ANSI palette, which is
     /// interpreted based on the client's theming.
@@ -192,7 +192,7 @@ pub enum HighlightingColor {
 /// [Section 6.3](https://melt-umn.github.io/monto-v3-draft/draft03/#6-3-highlighting)
 /// of the specification.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all="snake_case", untagged)]
+#[serde(rename_all = "snake_case", untagged)]
 pub enum HighlightingColorToken {
     /// A comment in source code.
     Comment,

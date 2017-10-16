@@ -6,6 +6,7 @@
 //! This ought to be rewritten to use a trait for ServiceFn.
 
 pub mod config;
+pub mod helpers;
 pub mod messages;
 mod serve;
 
@@ -30,7 +31,11 @@ impl Service {
     /// Creates a new Service.
     pub fn new(config: Config, handle: Handle) -> Service {
         let funcs = BTreeMap::new();
-        Service { config, funcs, handle }
+        Service {
+            config,
+            funcs,
+            handle,
+        }
     }
 
     /// Creates a ServiceNegotiation.
@@ -62,5 +67,9 @@ pub trait ServiceProvider {
     fn descriptor(&self) -> ProductDescriptor;
 
     /// The function that actually runs the service.
-    fn service(&mut self, path: &str, products: Vec<Product>) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>);
+    fn service(
+        &mut self,
+        path: &str,
+        products: Vec<Product>,
+    ) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>);
 }

@@ -46,75 +46,91 @@ impl HyperService for Broker {
     type Request = Request;
     type Response = Response<Body>;
     type Error = HyperError;
-    type Future = Box<Future<Item=Response<Body>, Error=HyperError>>;
+    type Future = Box<Future<Item = Response<Body>, Error = HyperError>>;
 
     fn call(&self, req: Request) -> Self::Future {
         let (method, uri, _, _, body) = req.deconstruct();
-        let f: Box<Future<Item=_, Error=HyperError>> = match (method.clone(), uri.path()) {
+        let f: Box<Future<Item = _, Error = HyperError>> = match (method.clone(), uri.path()) {
             (Method::Post, "/monto/version") => {
                 let service = self.0.clone();
-                Box::new(json_request(body).and_then(move |sbn: ServiceBrokerNegotiation| {
-                    debug!("Got ServiceBrokerNegotiation {:?}", sbn);
-                    let sn = service.borrow().negotiation();
-                    let status = if sbn.monto.compatible(&sn.monto) {
-                        StatusCode::Ok
-                    } else {
-                        StatusCode::BadRequest
-                    };
-                    json_response(sn, status)
-                }).or_else(|e| {
-                    // Log the error.
-                    error!("{}", e);
+                Box::new(
+                    json_request(body)
+                        .and_then(move |sbn: ServiceBrokerNegotiation| {
+                            debug!("Got ServiceBrokerNegotiation {:?}", sbn);
+                            let sn = service.borrow().negotiation();
+                            let status = if sbn.monto.compatible(&sn.monto) {
+                                StatusCode::Ok
+                            } else {
+                                StatusCode::BadRequest
+                            };
+                            json_response(sn, status)
+                        })
+                        .or_else(|e| {
+                            // Log the error.
+                            error!("{}", e);
 
-                    match e {
-                        // If it's a Hyper error, just pass it along.
-                        Left(e) => Box::new(err(e)),
-                        // If it's serde's though, transform it into a 500.
-                        Right(_) => error_response(StatusCode::InternalServerError)
-                    }
-                }))
-            },
+                            match e {
+                                // If it's a Hyper error, just pass it along.
+                                Left(e) => Box::new(err(e)),
+                                // If it's serde's though, transform it into a 500.
+                                Right(_) => error_response(StatusCode::InternalServerError),
+                            }
+                        }),
+                )
+            }
             (Method::Post, "/monto/service") => {
                 let service = self.0.clone();
-                Box::new(json_request(body).and_then(move |br: BrokerRequest| {
-                    debug!("Got BrokerRequest {:?}", br);
-                    let BrokerRequest { request, products } = br;
-                    let descriptor: ProductDescriptor = request.clone().into();
-                    let mut service = service.borrow_mut();
-                    if let Some(provider) = service.funcs.get_mut(&descriptor) {
-                        let (r, notices) = provider.service(&request.path, products);
-                        match r {
-                            Ok(val) => json_response(ServiceProduct {
-                                product: Product {
-                                    name: descriptor.name,
-                                    language: descriptor.language,
-                                    path: request.path,
-                                    value: val,
-                                },
-                                notices: notices,
-                            }, StatusCode::Ok),
-                            Err(errors) => {
-                                error!("{:?}", errors);
-                                json_response(ServiceErrors { errors, notices }, StatusCode::InternalServerError)
-                            },
-                        }
-                    } else {
-                        warn!("Couldn't find a provider for {:?}", descriptor);
-                        json_response(request, StatusCode::BadRequest)
-                    }
-                }).or_else(|e| {
-                    // Log the error.
-                    error!("{}", e);
+                Box::new(
+                    json_request(body)
+                        .and_then(move |br: BrokerRequest| {
+                            debug!("Got BrokerRequest {:?}", br);
+                            let BrokerRequest { request, products } = br;
+                            let descriptor: ProductDescriptor = request.clone().into();
+                            let mut service = service.borrow_mut();
+                            if let Some(provider) = service.funcs.get_mut(&descriptor) {
+                                let (r, notices) = provider.service(&request.path, products);
+                                match r {
+                                    Ok(val) => {
+                                        json_response(
+                                            ServiceProduct {
+                                                product: Product {
+                                                    name: descriptor.name,
+                                                    language: descriptor.language,
+                                                    path: request.path,
+                                                    value: val,
+                                                },
+                                                notices: notices,
+                                            },
+                                            StatusCode::Ok,
+                                        )
+                                    }
+                                    Err(errors) => {
+                                        error!("{:?}", errors);
+                                        json_response(
+                                            ServiceErrors { errors, notices },
+                                            StatusCode::InternalServerError,
+                                        )
+                                    }
+                                }
+                            } else {
+                                warn!("Couldn't find a provider for {:?}", descriptor);
+                                json_response(request, StatusCode::BadRequest)
+                            }
+                        })
+                        .or_else(|e| {
+                            // Log the error.
+                            error!("{}", e);
 
-                    match e {
-                        // If it's a Hyper error, just pass it along.
-                        Left(e) => Box::new(err(e)),
-                        // If it's serde's though, transform it into a 500.
-                        Right(_) => error_response(StatusCode::InternalServerError)
-                    }
-                }))
-            },
-            _ => error_response(StatusCode::NotFound)
+                            match e {
+                                // If it's a Hyper error, just pass it along.
+                                Left(e) => Box::new(err(e)),
+                                // If it's serde's though, transform it into a 500.
+                                Right(_) => error_response(StatusCode::InternalServerError),
+                            }
+                        }),
+                )
+            }
+            _ => error_response(StatusCode::NotFound),
         };
         Box::new(f.map(move |r: Response| {
             let status = r.status();
@@ -146,20 +162,29 @@ impl<F: Future> Future for ServeFuture<F> {
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match self.stop.poll() {
-            Ok(Async::NotReady) => loop {
-                match self.listener.poll() {
-                    Ok(Async::Ready(Some((stream, remote)))) => {
-                        info!("Got connection from {}", remote);
-                        let service = Broker(self.service.clone());
-                        self.http.bind_connection(&self.handle, stream, remote, service);
-                    },
-                    Ok(Async::Ready(None)) => {
-                        panic!("TcpListener.incoming() stream ended! (This is documented to be impossible)");
-                    },
-                    Ok(Async::NotReady) => return Ok(Async::NotReady),
-                    Err(err) => return Err(Right(err)),
+            Ok(Async::NotReady) => {
+                loop {
+                    match self.listener.poll() {
+                        Ok(Async::Ready(Some((stream, remote)))) => {
+                            info!("Got connection from {}", remote);
+                            let service = Broker(self.service.clone());
+                            self.http.bind_connection(
+                                &self.handle,
+                                stream,
+                                remote,
+                                service,
+                            );
+                        }
+                        Ok(Async::Ready(None)) => {
+                            panic!(
+                                "TcpListener.incoming() stream ended! (This is documented to be impossible)"
+                            );
+                        }
+                        Ok(Async::NotReady) => return Ok(Async::NotReady),
+                        Err(err) => return Err(Right(err)),
+                    }
                 }
-            },
+            }
             Ok(Async::Ready(x)) => Ok(Async::Ready(x)),
             Err(e) => Err(Left(e)),
         }

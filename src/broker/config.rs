@@ -64,17 +64,18 @@ impl Config {
         use dirs::Directories;
         use std::env::home_dir;
 
-        Config::load_one(".").or_else(|| {
-            Directories::with_prefix("monto-broker", "monto-broker")
-                .ok()
-                .map(|dirs| dirs.config_home())
-                .and_then(Config::load_one)
-        }).or_else(|| {
-            home_dir().and_then(Config::load_one)
-        }).unwrap_or_else(|| {
-            warn!("Could not open any configuration, using the default.");
-            Config::default()
-        })
+        Config::load_one(".")
+            .or_else(|| {
+                Directories::with_prefix("monto-broker", "monto-broker")
+                    .ok()
+                    .map(|dirs| dirs.config_home())
+                    .and_then(Config::load_one)
+            })
+            .or_else(|| home_dir().and_then(Config::load_one))
+            .unwrap_or_else(|| {
+                warn!("Could not open any configuration, using the default.");
+                Config::default()
+            })
     }
 
     /// Loads the config and parses command line arguments at the same time.
@@ -86,9 +87,7 @@ impl Config {
             (@arg CONFIG: --config +takes_value "The path to the config file.")
         ).get_matches();
         if let Some(config_path) = matches.value_of_os("CONFIG") {
-            Config::load_one(&config_path).unwrap_or_else(|| {
-                panic!("Failed to load config.")
-            })
+            Config::load_one(&config_path).unwrap_or_else(|| panic!("Failed to load config."))
         } else {
             Config::load()
         }
@@ -110,7 +109,7 @@ impl Config {
                     error!("Error opening config file `{}': {}", path.display(), err);
                 }
                 return None;
-            },
+            }
         };
 
         // Create a buffer to store the file, and read the file into it.
@@ -126,7 +125,7 @@ impl Config {
             Err(err) => {
                 error!("Error parsing config file `{}': {}", path.display(), err);
                 None
-            },
+            }
         }
     }
 }
@@ -148,9 +147,7 @@ pub struct BrokerConfig {
 
 impl Default for BrokerConfig {
     fn default() -> BrokerConfig {
-        BrokerConfig {
-            service_failure_is_fatal: true,
-        }
+        BrokerConfig { service_failure_is_fatal: true }
     }
 }
 
@@ -221,11 +218,12 @@ pub struct ServiceConfig {
 impl ServiceConfig {
     /// Builds a URL from the URL parts.
     pub fn build_url<K, P, PI, QI, V>(&self, path: PI, query: QI) -> Url
-        where P: AsRef<str>,
-             PI: IntoIterator<Item=P>,
-              K: AsRef<str>,
-              V: AsRef<str>,
-             QI: IntoIterator<Item=(K, V)>
+    where
+        P: AsRef<str>,
+        PI: IntoIterator<Item = P>,
+        K: AsRef<str>,
+        V: AsRef<str>,
+        QI: IntoIterator<Item = (K, V)>,
     {
         // Build the base URL.
         let url = format!("{}://{}{}", self.scheme, self.addr, self.base);
@@ -239,16 +237,19 @@ impl ServiceConfig {
         // Build the query part of the URL.
         for part in query {
             let (k, v) = part;
-            url.query_pairs_mut()
-                .append_pair(k.as_ref(), v.as_ref());
+            url.query_pairs_mut().append_pair(k.as_ref(), v.as_ref());
         }
 
         // Return the URL.
         url
     }
 
-    fn default_base() -> String { "/monto".to_string() }
-    fn default_scheme() -> String { "http".to_string() }
+    fn default_base() -> String {
+        "/monto".to_string()
+    }
+    fn default_scheme() -> String {
+        "http".to_string()
+    }
 }
 
 /// The configuration for a Broker's reported version.

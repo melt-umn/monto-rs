@@ -37,19 +37,30 @@ impl Broker {
     /// TODO: This can be made more efficient when
     /// [`conservative_impl_trait`](https://github.com/rust-lang/rust/issues/34511)
     /// is stabilized.
-    pub fn new(config: Config, handle: Handle) -> Box<Future<Item=Broker, Error=NewBrokerError>> {
+    pub fn new(
+        config: Config,
+        handle: Handle,
+    ) -> Box<Future<Item = Broker, Error = NewBrokerError>> {
         let cache = match Cache::new(&handle) {
             Ok(cache) => cache,
             Err(e) => return Box::new(err(e.into())),
         };
-        let futures = config.service.clone()
+        let futures = config
+            .service
+            .clone()
             .into_iter()
-            .map(|s| Service::connect(config.clone(), s, &handle)
-                 .map_err(NewBrokerError::from))
+            .map(|s| {
+                Service::connect(config.clone(), s, &handle).map_err(NewBrokerError::from)
+            })
             .collect::<Vec<_>>();
         Box::new(join_all(futures).map(|services| {
             info!("Connected to all services: {:?}", services);
-            Broker { cache, config, handle, services }
+            Broker {
+                cache,
+                config,
+                handle,
+                services,
+            }
         }))
     }
 
@@ -73,7 +84,10 @@ impl Broker {
             },
             broker: self.version(),
             extensions: self.config.extensions.client.clone(),
-            services: self.services.iter().map(|s| s.negotiation.clone()).collect(),
+            services: self.services
+                .iter()
+                .map(|s| s.negotiation.clone())
+                .collect(),
         }
     }
 

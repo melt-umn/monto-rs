@@ -17,7 +17,6 @@ impl Watcher {
     pub fn new(cache: Rc<RefCell<Cache>>) -> Watcher {
         Watcher { cache }
     }
-
 }
 
 impl Future for Watcher {
@@ -36,13 +35,13 @@ impl Future for Watcher {
                 DebouncedEvent::Chmod(path) => recursive_evict(cache, path),
                 DebouncedEvent::Remove(path) => recursive_evict(cache, path),
                 DebouncedEvent::Rename(path, _) => recursive_evict(cache, path),
-                DebouncedEvent::Rescan => {},
+                DebouncedEvent::Rescan => {}
                 DebouncedEvent::Error(err, path) => {
                     error!("{}", err);
                     if let Some(path) = path {
                         recursive_evict(cache, path)
                     }
-                },
+                }
             }
         }
         Ok(Async::NotReady)

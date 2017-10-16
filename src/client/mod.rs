@@ -20,7 +20,8 @@ use serde_json;
 use tokio_core::reactor::Handle;
 use url::Url;
 
-use common::messages::{Identifier, Language, Product, ProductDescriptor, ProductIdentifier, ProductName, ProtocolVersion, SoftwareVersion};
+use common::messages::{Identifier, Language, Product, ProductDescriptor, ProductIdentifier,
+                       ProductName, ProtocolVersion, SoftwareVersion};
 use common::products::Source;
 use self::messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use self::negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
@@ -40,17 +41,27 @@ impl Client {
     /// TODO: This can be made more efficient when
     /// [hyperium/hyper#1102](https://github.com/hyperium/hyper/issues/1102) is
     /// fixed.
-    fn make_uri(&self, service: Option<&Identifier>, product: &ProductName, language: Option<&Language>, path: &str) -> Uri {
+    fn make_uri(
+        &self,
+        service: Option<&Identifier>,
+        product: &ProductName,
+        language: Option<&Language>,
+        path: &str,
+    ) -> Uri {
         let mut url = match service {
             Some(service) => self.base_url.join(&format!("{}/", service)),
             None => self.base_url.join("broker/"),
-        }.and_then(|url| {
-            url.join(&product.to_string())
-        }).expect("Illegal internal Client state -- base_url is cannot-be-a-base");
+        }.and_then(|url| url.join(&product.to_string()))
+            .expect(
+                "Illegal internal Client state -- base_url is cannot-be-a-base",
+            );
 
         url.query_pairs_mut().append_pair("path", path);
         if let Some(language) = language {
-            url.query_pairs_mut().append_pair("language", &language.to_string());
+            url.query_pairs_mut().append_pair(
+                "language",
+                &language.to_string(),
+            );
         }
         url.into_string().parse().unwrap()
     }
@@ -103,7 +114,11 @@ impl Client {
     /// Attempts to retrieve a Product from the Broker, as described in
     /// [Section 4.4](https://melt-umn.github.io/monto-v3-draft/draft03/#4-4-requesting-products)
     /// of the specification.
-    pub fn request(&mut self, service: &Identifier, pi: &ProductIdentifier) -> Box<Future<Item=Product, Error=RequestError>> {
+    pub fn request(
+        &mut self,
+        service: &Identifier,
+        pi: &ProductIdentifier,
+    ) -> Box<Future<Item = Product, Error = RequestError>> {
         let path: &Path = pi.path.as_ref();
         let path = if path.is_absolute() {
             path.to_owned()
@@ -115,32 +130,37 @@ impl Client {
         };
         let path = path.display().to_string();
 
-        let req = Request::new(Get, self.make_uri(Some(service), &pi.name, Some(&pi.language), &path));
+        let req = Request::new(
+            Get,
+            self.make_uri(Some(service), &pi.name, Some(&pi.language), &path),
+        );
         info!("Requesting product {:?} from {}", pi, service);
-        Box::new(self.http.request(req)
-            .map_err(RequestError::from)
-            .and_then(|res| {
-                let status = res.status();
-                res.body()
-                    .concat2()
-                    .map(move |b| (b, status))
-                    .map_err(RequestError::from)
-            })
-            .and_then(|(body, status)| {
-                result(match status {
-                    StatusCode::Ok => {
-                        serde_json::from_slice(body.as_ref())
-                            .map_err(RequestError::from)
-                    },
-                    _ => {
-                        let e = RequestError::from(match serde_json::from_slice(body.as_ref()) {
-                            Ok(bge) => RequestErrorKind::Broker(bge),
-                            Err(err) => RequestErrorKind::Json(err),
-                        });
-                        Err(e)
-                    },
+        Box::new(
+            self.http
+                .request(req)
+                .map_err(RequestError::from)
+                .and_then(|res| {
+                    let status = res.status();
+                    res.body().concat2().map(move |b| (b, status)).map_err(
+                        RequestError::from,
+                    )
                 })
-            }))
+                .and_then(|(body, status)| {
+                    result(match status {
+                        StatusCode::Ok => {
+                            serde_json::from_slice(body.as_ref()).map_err(RequestError::from)
+                        }
+                        _ => {
+                            let e =
+                                RequestError::from(match serde_json::from_slice(body.as_ref()) {
+                                    Ok(bge) => RequestErrorKind::Broker(bge),
+                                    Err(err) => RequestErrorKind::Json(err),
+                                });
+                            Err(e)
+                        }
+                    })
+                }),
+        )
     }
 
     /// Returns an iterator over the Products that can be requested by the Client.
@@ -152,7 +172,11 @@ impl Client {
     }
 
     /// Sends a `source` Product to the Broker.
-    pub fn send_file<P: AsRef<Path>>(&mut self, path: P, language: Language) -> Box<Future<Item=(), Error=SendError>> {
+    pub fn send_file<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+        language: Language,
+    ) -> Box<Future<Item = (), Error = SendError>> {
         let path = path.as_ref();
         let path = if path.is_absolute() {
             path.to_owned()
@@ -166,9 +190,8 @@ impl Client {
         let src = match File::open(&path) {
             Ok(mut file) => {
                 let mut buf = String::new();
-                file.read_to_string(&mut buf)
-                    .map(|_| buf)
-            },
+                file.read_to_string(&mut buf).map(|_| buf)
+            }
             Err(e) => Err(e),
         };
         let src = match src {
@@ -185,8 +208,16 @@ impl Client {
     /// Sends a Product to the Broker, as described in
     /// [Section 4.3](https://melt-umn.github.io/monto-v3-draft/draft03/#4-3-sending-products)
     /// of the specification.
-    pub fn send_product<P: Into<Product>>(&mut self, p: P) -> Box<Future<Item=(), Error=SendError>> {
-        let Product { language, name, path, value } = p.into();
+    pub fn send_product<P: Into<Product>>(
+        &mut self,
+        p: P,
+    ) -> Box<Future<Item = (), Error = SendError>> {
+        let Product {
+            language,
+            name,
+            path,
+            value,
+        } = p.into();
         let path = PathBuf::from(path);
         let path = if path.is_absolute() {
             path
@@ -209,21 +240,27 @@ impl Client {
             headers.set(ContentType::json());
         }
         req.set_body(body);
-        Box::new(self.http.request(req).and_then(|r| {
-            let status = r.status();
-            r.body()
-                .concat2()
-                .map(move |b| (b, status))
-        }).map_err(SendError::from).and_then(|(body, status)| {
-            result(match status {
-                StatusCode::NoContent => Ok(()),
-                StatusCode::BadRequest => Err(match serde_json::from_slice(body.as_ref()) {
-                    Ok(bpe) => SendErrorKind::Broker(bpe).into(),
-                    Err(err) => SendError::from(err),
+        Box::new(
+            self.http
+                .request(req)
+                .and_then(|r| {
+                    let status = r.status();
+                    r.body().concat2().map(move |b| (b, status))
+                })
+                .map_err(SendError::from)
+                .and_then(|(body, status)| {
+                    result(match status {
+                        StatusCode::NoContent => Ok(()),
+                        StatusCode::BadRequest => Err(
+                            match serde_json::from_slice(body.as_ref()) {
+                                Ok(bpe) => SendErrorKind::Broker(bpe).into(),
+                                Err(err) => SendError::from(err),
+                            },
+                        ),
+                        _ => panic!("TODO Proper error handling"),
+                    })
                 }),
-                _ => panic!("TODO Proper error handling"),
-            })
-        }))
+        )
     }
 }
 
@@ -269,7 +306,7 @@ impl Default for Config {
 /// TODO: This can be made more efficient when
 /// [`conservative_impl_trait`](https://github.com/rust-lang/rust/issues/34511)
 /// is stabilized.
-pub struct ProductsIter<'a>(Box<Iterator<Item=(&'a Identifier, &'a ProductDescriptor)> + 'a>); // TODO Don't use a trait object.
+pub struct ProductsIter<'a>(Box<Iterator<Item = (&'a Identifier, &'a ProductDescriptor)> + 'a>); // TODO Don't use a trait object.
 
 impl<'a> Iterator for ProductsIter<'a> {
     type Item = (&'a Identifier, &'a ProductDescriptor);

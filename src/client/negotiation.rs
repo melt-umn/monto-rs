@@ -17,10 +17,18 @@ pub struct Negotiation {
 
 impl Negotiation {
     /// Creates a new instance of Negotiation.
-    pub(crate) fn new(base_url: Url, client: HttpClient, cn: ClientNegotiation, future: FutureResponse) -> Negotiation {
-        let inner = future.map_err(NegotiationError::from)
+    pub(crate) fn new(
+        base_url: Url,
+        client: HttpClient,
+        cn: ClientNegotiation,
+        future: FutureResponse,
+    ) -> Negotiation {
+        let inner = future
+            .map_err(NegotiationError::from)
             .and_then(|res| res.body().concat2().map_err(NegotiationError::from))
-            .and_then(|body| serde_json::from_slice(body.as_ref()).map_err(NegotiationError::from))
+            .and_then(|body| {
+                serde_json::from_slice(body.as_ref()).map_err(NegotiationError::from)
+            })
             .and_then(|cbn| Negotiation::negotiate(base_url, client, cn, cbn));
         Negotiation { inner: Box::new(inner) }
     }
@@ -31,14 +39,26 @@ impl Negotiation {
         Negotiation { inner: Box::new(err(error)) }
     }
 
-    fn negotiate(base_url: Url, http: HttpClient, cn: ClientNegotiation, cbn: ClientBrokerNegotiation) -> Result<Client, NegotiationError> {
+    fn negotiate(
+        base_url: Url,
+        http: HttpClient,
+        cn: ClientNegotiation,
+        cbn: ClientBrokerNegotiation,
+    ) -> Result<Client, NegotiationError> {
         if cn.monto.compatible(&cbn.monto) {
-            let services = cbn.services.into_iter()
+            let services = cbn.services
+                .into_iter()
                 .map(|sn| (sn.service.id, sn.products))
                 .collect();
-            Ok(Client { base_url, http, services })
+            Ok(Client {
+                base_url,
+                http,
+                services,
+            })
         } else {
-            Err(NegotiationErrorKind::NotCompatible(cn.monto, cbn.monto).into())
+            Err(
+                NegotiationErrorKind::NotCompatible(cn.monto, cbn.monto).into(),
+            )
         }
     }
 }
@@ -52,7 +72,7 @@ impl Future for Negotiation {
     }
 }
 
-type NegotiationInner = Box<Future<Item=Client, Error=NegotiationError>>;
+type NegotiationInner = Box<Future<Item = Client, Error = NegotiationError>>;
 
 error_chain! {
     types {
