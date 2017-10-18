@@ -8,14 +8,15 @@ use service::messages::{ServiceError, ServiceNotice};
 
 /// Serves as the body of a ServiceProvider that only operates on the source of
 /// a single product.
-pub fn simple_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
+pub fn one_to_one_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
     path: &str,
     mut products: Vec<Product>,
+    pn: ProductName,
     lang: Language,
     f: F,
 ) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>) {
     let idx = products.iter().position(|p| {
-        p.name == ProductName::Source && p.language == lang && p.path == path
+        p.name == pn && p.language == lang && p.path == path
     });
 
     let r = if let Some(idx) = idx {
@@ -42,4 +43,15 @@ pub fn simple_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
         },
         notices,
     )
+}
+
+/// Serves as the body of a ServiceProvider that only operates on the source of
+/// a single source product.
+pub fn simple_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
+    path: &str,
+    products: Vec<Product>,
+    lang: Language,
+    f: F,
+) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>) {
+    one_to_one_fn(path, products, ProductName::Source, lang, f)
 }
