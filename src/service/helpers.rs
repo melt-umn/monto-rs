@@ -8,7 +8,7 @@ use service::messages::{ServiceError, ServiceNotice};
 
 /// Serves as the body of a ServiceProvider that only operates on the source of
 /// a single product.
-pub fn one_to_one_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
+pub fn one_to_one_fn<F: FnOnce(Value) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>)>(
     path: &str,
     mut products: Vec<Product>,
     pn: ProductName,
@@ -19,30 +19,24 @@ pub fn one_to_one_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
         p.name == pn && p.language == lang && p.path == path
     });
 
-    let r = if let Some(idx) = idx {
-        match products.swap_remove(idx).value {
-            Value::String(src) => f(src).map_err(|e| ServiceError::Other(e.to_string())),
-            _ => Err(ServiceError::Other("bad source product".to_string())),
-        }
+    let (r, mut n) = if let Some(idx) = idx {
+        f(products.swap_remove(idx).value)
     } else {
-        Err(ServiceError::UnmetDependency(ProductIdentifier {
-            name: ProductName::Source,
-            language: lang,
-            path: path.to_string(),
-        }))
+        (
+            Err(vec![
+                ServiceError::UnmetDependency(ProductIdentifier {
+                    name: ProductName::Source,
+                    language: lang,
+                    path: path.to_string(),
+                }),
+            ]),
+            vec![],
+        )
     };
-    let notices = products
-        .into_iter()
-        .map(|p| p.into())
-        .map(ServiceNotice::UnusedDependency)
-        .collect();
-    (
-        match r {
-            Ok(product) => Ok(product),
-            Err(err) => Err(vec![err]),
-        },
-        notices,
-    )
+    n.extend(products.into_iter().map(|p| p.into()).map(
+        ServiceNotice::UnusedDependency,
+    ));
+    (r, n)
 }
 
 /// Serves as the body of a ServiceProvider that only operates on the source of
@@ -53,5 +47,20 @@ pub fn simple_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
     lang: Language,
     f: F,
 ) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>) {
-    one_to_one_fn(path, products, ProductName::Source, lang, f)
+    one_to_one_fn(path, products, ProductName::Source, lang, |val| match val {
+        Value::String(s) => {
+            (
+                f(s).map_err(|e| vec![ServiceError::Other(e.to_string())]),
+                vec![],
+            )
+        }
+        _ => (
+            Err(vec![
+                ServiceError::Other(
+                    "Invalid source product".to_string()
+                ),
+            ]),
+            vec![],
+        ),
+    })
 }
