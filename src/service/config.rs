@@ -5,6 +5,8 @@ use std::io::Error as IoError;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 
+use rand::random;
+
 use common::messages::{Identifier, SoftwareVersion};
 use super::messages::ServiceExtension;
 
@@ -238,7 +240,7 @@ pub struct VersionConfig {
 
 impl Default for VersionConfig {
     fn default() -> VersionConfig {
-        let random = 0; // TODO
+        let random: u32 = random();
         VersionConfig {
             id: format!("edu.umn.cs.melt.monto.servicelib{:08x}", random)
                 .parse()

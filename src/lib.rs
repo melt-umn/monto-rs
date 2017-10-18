@@ -18,6 +18,7 @@ extern crate lazy_static;
 extern crate log;
 extern crate mime;
 extern crate notify;
+extern crate rand;
 extern crate regex;
 extern crate semver;
 extern crate serde;
