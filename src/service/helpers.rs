@@ -25,7 +25,7 @@ pub fn one_to_one_fn<F: FnOnce(Value) -> (Result<Value, Vec<ServiceError>>, Vec<
         (
             Err(vec![
                 ServiceError::UnmetDependency(ProductIdentifier {
-                    name: ProductName::Source,
+                    name: pn,
                     language: lang,
                     path: path.to_string(),
                 }),
