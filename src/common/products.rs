@@ -2,9 +2,12 @@
 //! [Section 6](https://melt-umn.github.io/monto-v3-draft/draft03/#6-products)
 //! of the Monto specification.
 
+use std::fmt::{Formatter, Result as FmtResult};
 use std::fs::FileType;
 use std::path::PathBuf;
 
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::{Error as SerdeError, Unexpected, Visitor};
 use serde_json::{to_value, Value};
 use common::messages::{Language, ProductName, Product};
 
@@ -131,8 +134,7 @@ pub struct Error {
 /// Defined in
 /// [Section 6.2](https://melt-umn.github.io/monto-v3-draft/draft03/#6-2-errors)
 /// of the specification.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "snake_case", untagged)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorSeverity {
     /// A fatal error.
     Error,
@@ -142,6 +144,59 @@ pub enum ErrorSeverity {
 
     /// An informational message.
     Info,
+}
+
+impl<'de> Deserialize<'de> for ErrorSeverity {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct V;
+        impl<'de> Visitor<'de> for V {
+            type Value = ErrorSeverity;
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                write!(fmt, "a valid ErrorSeverity")
+            }
+            fn visit_str<E: SerdeError>(self, s: &str) -> Result<ErrorSeverity, E> {
+                match s {
+                    "error" => Ok(ErrorSeverity::Error),
+                    "warning" => Ok(ErrorSeverity::Warning),
+                    "info" => Ok(ErrorSeverity::Info),
+                    _ => Err(E::invalid_value(
+                        Unexpected::Str(s),
+                        &"a valid ErrorSeverity",
+                    )),
+                }
+            }
+        }
+        deserializer.deserialize_string(V)
+    }
+}
+
+impl Serialize for ErrorSeverity {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(match *self {
+            ErrorSeverity::Error => "error",
+            ErrorSeverity::Warning => "warning",
+            ErrorSeverity::Info => "info",
+        })
+    }
+}
+
+#[test]
+fn error_severity_serialize_test() {
+    macro_rules! test {
+        ($sev:expr, $s:expr) => {
+            assert_eq!(to_value($sev).unwrap().to_string(), $s);
+        }
+    }
+
+    test!(ErrorSeverity::Error, r#""error""#);
+    test!(ErrorSeverity::Warning, r#""warning""#);
+    test!(ErrorSeverity::Info, r#""info""#);
 }
 
 /// Token information to be used for highlighting source code.

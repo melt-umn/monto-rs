@@ -15,11 +15,11 @@ pub fn one_to_one_fn<F: FnOnce(Value) -> (Result<Value, Vec<ServiceError>>, Vec<
     lang: Language,
     f: F,
 ) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>) {
-    let idx = products.iter().position(|p| {
+    let (r, mut n) = if let Some(idx) = products.iter().position(|p| {
         p.name == pn && p.language == lang && p.path == path
-    });
+    })
+    {
 
-    let (r, mut n) = if let Some(idx) = idx {
         f(products.swap_remove(idx).value)
     } else {
         (

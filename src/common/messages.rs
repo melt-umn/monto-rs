@@ -3,8 +3,7 @@
 //! of the specification.
 
 use std::cmp::Ordering;
-use std::fmt::Result as FmtResult;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
 use regex::Regex;
@@ -159,6 +158,7 @@ impl Display for Language {
 impl From<String> for Language {
     fn from(s: String) -> Language {
         match s.as_ref() {
+            "c" => Language::C,
             "json" => Language::Json,
             "text" => Language::Text,
             "none" => Language::None,
