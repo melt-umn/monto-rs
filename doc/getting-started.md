@@ -24,5 +24,7 @@ The broker's in this repo; `cargo install` should install it to `~/.cargo/bin` a
 
 There are a few services floating around:
 
+ - [`monto-cpp`](https://github.umn.edu/ringo025/monto-cpp) has a C preprocessor as a Monto service. Note that currently, this requires running this service on the same machine as the client. This restriction is planned to be lifted in the future.
  - [`monto-example-services`](https://github.com/melt-umn/monto-example-services) includes a few demo services for plain text.
- - TODO
+ - [`monto-loctrans`](https://github.umn.edu/ringo025/monto-loctrans) translates the products given by ableC to the standard ones. It's a kludge, but /shrug.
+ - [`ableC-monto`](https://github.umn.edu/ringo025/ableC-monto) is a Monto service for ableC.
