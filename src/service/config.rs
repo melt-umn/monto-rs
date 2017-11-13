@@ -209,7 +209,8 @@ fn netconfig() {
 pub struct VersionConfig {
     /// The ID of the Broker.
     ///
-    /// Defaults to "edu.umn.cs.melt.monto_rs.broker".
+    /// Defaults to "edu.umn.cs.melt.monto.servicelibxxxxxxxx", where each x is
+    /// replaced by a random hex digit.
     pub id: Identifier,
 
     /// The name of the Broker.
