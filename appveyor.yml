@@ -37,13 +37,13 @@ install:
   - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
 
 build_script:
-  - cargo build
+  - cargo build --all
 
 test_script:
-  - cargo test
+  - cargo test --all
 
 before_deploy:
-  - cargo build --release
+  - cargo build --release --all
   - mkdir staging
   - TODO
 deploy:

@@ -1,47 +1,13 @@
-[package]
-authors = ["Nathaniel Ringo <remexre@gmail.com>"]
-description = "A crate for the Monto protocol. This crate implements version 3.0.0-draft03 of the protocol."
-documentation = "https://docs.rs/monto"
-homepage = "https://github.com/melt-umn/monto-rs"
-license = "Apache-2.0/MIT"
-name = "monto"
-version = "0.1.12"
-
-[[bin]]
-name = "monto-broker"
-path = "src/bin/broker.rs"
-
-[[bin]]
-name = "monto-simple-client"
-path = "src/bin/simple-client.rs"
-
 [badges.appveyor]
 repository = "remexre/monto-rs"
 
 [badges.travis-ci]
 repository = "melt-umn/monto-rs"
 
-[dependencies]
-ansi_term = "0.9.0"
-clap = "2.26.0"
-dirs = "0.3.1"
-either = "1.1.0"
-error-chain = "0.11.0-rc.2"
-futures = "0.1.14"
-hyper = "0.11.0"
-itertools = "0.6.0"
-lazy_static = "0.2.8"
-log = "0.3.8"
-mime = "0.3.3"
-notify = "4.0.0"
-pretty_logger = "0.1.7"
-rand = "0.3.16"
-regex = "0.2.2"
-semver = "0.7.0"
-serde = "1.0.8"
-serde_derive = "1.0.8"
-serde_json = "1.0.2"
-tokio-core = "0.1.8"
-toml = "0.4.2"
-url = "1.5.0"
-void = "1.0.2"
+[workspace]
+members = [
+	"broker",
+	"client",
+	"common",
+	"service",
+]
