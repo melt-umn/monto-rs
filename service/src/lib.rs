@@ -15,15 +15,20 @@ extern crate futures;
 extern crate hyper;
 #[macro_use]
 extern crate log;
-extern crate monto3_common;
+#[doc(hidden)]
+pub extern crate monto3_common;
 extern crate rand;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
+#[doc(hidden)]
+pub extern crate serde_json;
 extern crate tokio_core;
 extern crate toml;
 extern crate void;
+
+#[macro_use]
+mod macros;
 
 pub mod config;
 pub mod helpers;

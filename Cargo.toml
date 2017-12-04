@@ -10,4 +10,7 @@ members = [
 	"client",
 	"common",
 	"service",
+	"services/monto-cpp",
+	"services/monto-example-services",
+	"services/monto-loctrans",
 ]
