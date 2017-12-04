@@ -34,3 +34,8 @@ version = "0.1.0"
 [dependencies.monto3-service]
 path = "../service"
 version = "0.1.0"
+
+[[bin]]
+name = "monto3-broker"
+path = "src/main.rs"
+doc = false
