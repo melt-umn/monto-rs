@@ -1,7 +1,7 @@
 /// Defines a simple ServiceProvider.
 ///
 /// ```
-/// # #[macro_use] extern crate monto;
+/// # #[macro_use] extern crate monto3_service;
 /// simple_service_provider! {
 ///     name = Example;
 ///     product = "errors";

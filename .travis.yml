@@ -15,8 +15,13 @@ script:
 
 before_deploy:
 - cargo build --release --all
-- mkdir staging
-- TODO
+- mkdir -p staging/monto-rs
+- cp target/release/monto3-broker staging/monto-rs
+- cp target/release/monto3-cpp staging/monto-rs
+- cp target/release/monto3-example-services staging/monto-rs
+- cp target/release/monto3-loctrans staging/monto-rs
+- cp target/release/monto3-simple-client staging/monto-rs
+- tar czvf monto-rs-$(TARGET)-$(TRAVIS_TAG).tar.gz staging/monto-rs
 deploy:
   provider: releases
   file: monto-rs-$(TARGET)-$(TRAVIS_TAG).tar.gz

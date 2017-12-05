@@ -1,6 +1,6 @@
 [package]
 authors = ["Nathan Ringo <remexre@gmail.com>"]
-name = "monto-loctrans"
+name = "monto3-loctrans"
 version = "0.1.0"
 
 [dependencies]

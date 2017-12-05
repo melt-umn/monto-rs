@@ -1,6 +1,6 @@
 [package]
 authors = ["Nathan Ringo <remexre@gmail.com>"]
-name = "monto-cpp"
+name = "monto3-cpp"
 version = "0.1.0"
 
 [dependencies]

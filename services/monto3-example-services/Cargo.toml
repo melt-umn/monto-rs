@@ -1,6 +1,6 @@
 [package]
 authors = ["Nathan Ringo <remexre@gmail.com>"]
-name = "monto-example-services"
+name = "monto3-example-services"
 version = "0.1.0"
 
 [dependencies]
