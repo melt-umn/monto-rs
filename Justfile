@@ -1,5 +1,6 @@
-all: check doc build test build-release
-build:
+all: check doc build test
+build: build-debug build-release
+build-debug:
 	cargo build --all
 build-release:
 	cargo build --all --release
@@ -9,7 +10,10 @@ clean:
 	cargo clean
 doc:
 	cargo doc --all
-test:
+test: test-debug test-release
+test-debug:
 	cargo test --all
+test-release:
+	cargo test --all --release
 watch TARGET="all":
 	watchexec -cr "just {{TARGET}}"
