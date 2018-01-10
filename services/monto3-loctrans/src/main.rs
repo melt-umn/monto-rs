@@ -66,7 +66,11 @@ fn pos_to_byte(
     Ok((s, e))
 }
 
-fn one_pos_to_byte(buf: &str, mut line: usize, mut col: usize) -> Result<usize, Box<Error>> {
+fn one_pos_to_byte(
+    buf: &str,
+    mut line: usize,
+    mut col: usize,
+) -> Result<usize, Box<Error>> {
     let mut n = 0;
     for c in buf.chars() {
         n += 1;

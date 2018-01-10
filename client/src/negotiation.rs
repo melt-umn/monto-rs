@@ -26,9 +26,12 @@ impl Negotiation {
     ) -> Negotiation {
         let inner = future
             .map_err(NegotiationError::from)
-            .and_then(|res| res.body().concat2().map_err(NegotiationError::from))
+            .and_then(|res| {
+                res.body().concat2().map_err(NegotiationError::from)
+            })
             .and_then(|body| {
-                serde_json::from_slice(body.as_ref()).map_err(NegotiationError::from)
+                serde_json::from_slice(body.as_ref())
+                    .map_err(NegotiationError::from)
             })
             .and_then(|cbn| Negotiation::negotiate(base_url, client, cn, cbn));
         Negotiation {

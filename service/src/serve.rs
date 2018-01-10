@@ -16,7 +16,8 @@ use monto3_common::{error_response, json_request, json_response};
 use monto3_common::messages::{Product, ProductDescriptor};
 
 use Service;
-use messages::{BrokerRequest, ServiceBrokerNegotiation, ServiceErrors, ServiceProduct};
+use messages::{BrokerRequest, ServiceBrokerNegotiation, ServiceErrors,
+               ServiceProduct};
 
 impl Service {
     /// Serves until the given future resolves.
@@ -51,7 +52,10 @@ impl HyperService for Broker {
 
     fn call(&self, req: Request) -> Self::Future {
         let (method, uri, _, _, body) = req.deconstruct();
-        let f: Box<Future<Item = _, Error = HyperError>> = match (method.clone(), uri.path()) {
+        let f: Box<Future<Item = _, Error = HyperError>> = match (
+            method.clone(),
+            uri.path(),
+        ) {
             (Method::Post, "/monto/version") => {
                 let service = self.0.clone();
                 Box::new(
@@ -74,7 +78,9 @@ impl HyperService for Broker {
                                 // If it's a Hyper error, just pass it along.
                                 Left(e) => Box::new(err(e)),
                                 // If it's serde's though, transform it into a 500.
-                                Right(_) => error_response(StatusCode::InternalServerError),
+                                Right(_) => error_response(
+                                    StatusCode::InternalServerError,
+                                ),
                             }
                         }),
                 )
@@ -88,8 +94,11 @@ impl HyperService for Broker {
                             let BrokerRequest { request, products } = br;
                             let descriptor: ProductDescriptor = request.clone().into();
                             let mut service = service.borrow_mut();
-                            if let Some(provider) = service.funcs.get_mut(&descriptor) {
-                                let (r, notices) = provider.service(&request.path, products);
+                            if let Some(provider) =
+                                service.funcs.get_mut(&descriptor)
+                            {
+                                let (r, notices) =
+                                    provider.service(&request.path, products);
                                 match r {
                                     Ok(val) => json_response(
                                         ServiceProduct {
@@ -112,7 +121,10 @@ impl HyperService for Broker {
                                     }
                                 }
                             } else {
-                                warn!("Couldn't find a provider for {:?}", descriptor);
+                                warn!(
+                                    "Couldn't find a provider for {:?}",
+                                    descriptor
+                                );
                                 json_response(request, StatusCode::BadRequest)
                             }
                         })
@@ -124,7 +136,9 @@ impl HyperService for Broker {
                                 // If it's a Hyper error, just pass it along.
                                 Left(e) => Box::new(err(e)),
                                 // If it's serde's though, transform it into a 500.
-                                Right(_) => error_response(StatusCode::InternalServerError),
+                                Right(_) => error_response(
+                                    StatusCode::InternalServerError,
+                                ),
                             }
                         }),
                 )
@@ -133,13 +147,14 @@ impl HyperService for Broker {
         };
         Box::new(f.map(move |r: Response| {
             let status = r.status();
-            let level = if status.is_server_error() || status.is_strange_status() {
-                LogLevel::Error
-            } else if status.is_client_error() {
-                LogLevel::Warn
-            } else {
-                LogLevel::Info
-            };
+            let level =
+                if status.is_server_error() || status.is_strange_status() {
+                    LogLevel::Error
+                } else if status.is_client_error() {
+                    LogLevel::Warn
+                } else {
+                    LogLevel::Info
+                };
             log!(level, "{} {} {}", u16::from(r.status()), method, uri.path());
             r
         }))
@@ -166,8 +181,12 @@ impl<F: Future> Future for ServeFuture<F> {
                     Ok(Async::Ready(Some((stream, remote)))) => {
                         info!("Got connection from {}", remote);
                         let service = Broker(self.service.clone());
-                        self.http
-                            .bind_connection(&self.handle, stream, remote, service);
+                        self.http.bind_connection(
+                            &self.handle,
+                            stream,
+                            remote,
+                            service,
+                        );
                     }
                     Ok(Async::Ready(None)) => {
                         panic!(

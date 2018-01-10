@@ -17,11 +17,19 @@ impl Client {
         language: Option<Language>,
         value: Value,
     ) -> BoxedFuture {
-        let language = match language.or_else(|| self.detect_language(&name, &path, &value)) {
+        let language = match language
+            .or_else(|| self.detect_language(&name, &path, &value))
+        {
             Some(language) => language,
-            None => return json_response(BrokerPutError::NoLanguage, StatusCode::BadRequest),
+            None => {
+                return json_response(
+                    BrokerPutError::NoLanguage,
+                    StatusCode::BadRequest,
+                )
+            }
         };
 
+        /*
         let broker = self.0.borrow_mut();
         let mut cache = broker.cache.borrow_mut();
 
@@ -34,12 +42,13 @@ impl Client {
         cache.add(gp);
 
         Box::new(ok(Response::new().with_status(StatusCode::NoContent)))
+        */
+        unimplemented!()
     }
 
     /// Detects the language of a Product.
     ///
-    /// Currently, not implemented (always returns `None`).
-    ///
+    /// TODO: Currently, not implemented (always returns `None`).
     /// Look into binding the `tokei` library, I guess?
     fn detect_language(
         &self,

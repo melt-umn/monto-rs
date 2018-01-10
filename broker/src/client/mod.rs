@@ -29,7 +29,8 @@ use monto3_common::messages::{Language, ProductIdentifier, ProductName};
 
 use Broker;
 
-type BoxedFuture = Box<Future<Item = Response, Error = Either<HyperError, JsonError>>>;
+type BoxedFuture =
+    Box<Future<Item = Response, Error = Either<HyperError, JsonError>>>;
 
 impl Broker {
     /// Returns a Future that will resolve once the given Future resolves,
@@ -80,7 +81,10 @@ impl Service for Client {
         let f: BoxedFuture = match (method.clone(), &path) {
             (Method::Post, path) if path == &["", "monto", "version"] => {
                 let client = self.clone();
-                Box::new(json_request(body).and_then(move |cn| client.negotiation(cn)))
+                Box::new(
+                    json_request(body)
+                        .and_then(move |cn| client.negotiation(cn)),
+                )
             }
             (Method::Put, path)
                 if path.len() == 4 && path[0] == "" && path[1] == "monto"
@@ -102,23 +106,35 @@ impl Service for Client {
                     .unwrap_or_else(ContentType::json);
                 match (content_type.type_(), content_type.subtype()) {
                     (mime::TEXT, mime::PLAIN) => if pt == ProductName::Source {
-                        Box::new(body.concat2().map_err(Left).and_then(move |b| {
-                            let b = String::from_utf8_lossy(b.as_ref()).into_owned();
-                            client.send_products(pt, pp, language, Value::String(b))
-                        }))
+                        Box::new(body.concat2().map_err(Left).and_then(
+                            move |b| {
+                                let b = String::from_utf8_lossy(b.as_ref())
+                                    .into_owned();
+                                client.send_products(
+                                    pt,
+                                    pp,
+                                    language,
+                                    Value::String(b),
+                                )
+                            },
+                        ))
                     } else {
                         panic!("TODO Error Handling");
                     },
-                    (mime::APPLICATION, mime::JSON) => Box::new(
-                        json_request(body)
-                            .and_then(move |p| client.send_products(pt, pp, language, p)),
-                    ),
+                    (mime::APPLICATION, mime::JSON) => {
+                        Box::new(json_request(body).and_then(move |p| {
+                            client.send_products(pt, pp, language, p)
+                        }))
+                    }
                     _ => unimplemented!(),
                 }
             }
-            (Method::Get, path) if path.len() == 4 && path[0] == "" && path[1] == "monto" => {
+            (Method::Get, path)
+                if path.len() == 4 && path[0] == "" && path[1] == "monto" =>
+            {
                 let service_id = path[2].parse().expect("TODO Error handling");
-                let product_type = path[3].parse().expect("TODO Error handling");
+                let product_type =
+                    path[3].parse().expect("TODO Error handling");
                 let product_path = query_pairs
                     .find(|&(ref k, _)| k == "path")
                     .map(|(_, v)| v.into_owned())
@@ -139,30 +155,29 @@ impl Service for Client {
             }
             _ => Box::new(error_response(StatusCode::NotFound).map_err(Left)),
         };
-        Box::new(
-            f.or_else(|e| {
-                // Log the error.
-                error!("{}", e);
+        Box::new(f.or_else(|e| {
+            // Log the error.
+            error!("{}", e);
 
-                match e {
-                    // If it's a Hyper error, just pass it along.
-                    Left(e) => Box::new(err(e)),
-                    // If it's serde's though, transform it into a 500.
-                    Right(_) => error_response(StatusCode::InternalServerError),
-                }
-            }).map(move |r| {
-                    let status = r.status();
-                    let level = if status.is_server_error() || status.is_strange_status() {
-                        LogLevel::Error
-                    } else if status.is_client_error() {
-                        LogLevel::Warn
-                    } else {
-                        LogLevel::Info
-                    };
-                    log!(level, "{} {} {}", u16::from(r.status()), method, path_str);
-                    r
-                }),
-        )
+            match e {
+                // If it's a Hyper error, just pass it along.
+                Left(e) => Box::new(err(e)),
+                // If it's serde's though, transform it into a 500.
+                Right(_) => error_response(StatusCode::InternalServerError),
+            }
+        }).map(move |r| {
+            let status = r.status();
+            let level =
+                if status.is_server_error() || status.is_strange_status() {
+                    LogLevel::Error
+                } else if status.is_client_error() {
+                    LogLevel::Warn
+                } else {
+                    LogLevel::Info
+                };
+            log!(level, "{} {} {}", u16::from(r.status()), method, path_str);
+            r
+        }))
     }
 }
 
@@ -186,8 +201,12 @@ impl<F: Future> Future for ServeFuture<F> {
                     Ok(Async::Ready(Some((stream, remote)))) => {
                         info!("Got client connection from {}", remote);
                         let service = Client(self.broker.clone());
-                        self.http
-                            .bind_connection(&self.handle, stream, remote, service);
+                        self.http.bind_connection(
+                            &self.handle,
+                            stream,
+                            remote,
+                            service,
+                        );
                     }
                     Ok(Async::Ready(None)) => {
                         panic!(

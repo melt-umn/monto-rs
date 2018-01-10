@@ -33,7 +33,8 @@ use hyper::header::{ContentLength, ContentType};
 use tokio_core::reactor::Handle;
 use url::Url;
 
-use monto3_common::messages::{Identifier, Language, Product, ProductDescriptor, ProductIdentifier,
+use monto3_common::messages::{Identifier, Language, Product,
+                              ProductDescriptor, ProductIdentifier,
                               ProductName, ProtocolVersion, SoftwareVersion};
 use monto3_common::products::Source;
 
@@ -66,7 +67,9 @@ impl Client {
             Some(service) => self.base_url.join(&format!("{}/", service)),
             None => self.base_url.join("broker/"),
         }.and_then(|url| url.join(&product.to_string()))
-            .expect("Illegal internal Client state -- base_url is cannot-be-a-base");
+            .expect(
+                "Illegal internal Client state -- base_url is cannot-be-a-base",
+            );
 
         url.query_pairs_mut().append_pair("path", path);
         if let Some(language) = language {
@@ -85,10 +88,15 @@ impl Client {
     pub fn new(config: Config, handle: Handle) -> Negotiation {
         let scheme = "http"; // TODO TLS support.
 
-        let base_url = format!("{}://{}:{}/monto/", scheme, config.host, config.port);
+        let base_url =
+            format!("{}://{}:{}/monto/", scheme, config.host, config.port);
         let mut base_url = match Url::parse(&base_url) {
             Ok(url) => url,
-            Err(e) => return Negotiation::err(NegotiationErrorKind::BadConfigURL(e).into()),
+            Err(e) => {
+                return Negotiation::err(
+                    NegotiationErrorKind::BadConfigURL(e).into(),
+                )
+            }
         };
         if !base_url.path().ends_with('/') {
             let path = format!("{}/", base_url.path());
@@ -109,7 +117,11 @@ impl Client {
 
         let url = match base_url.join("version") {
             Ok(url) => url,
-            Err(e) => return Negotiation::err(NegotiationErrorKind::BadConfigURL(e).into()),
+            Err(e) => {
+                return Negotiation::err(
+                    NegotiationErrorKind::BadConfigURL(e).into(),
+                )
+            }
         };
         let mut req = Request::new(Post, url.to_string().parse().unwrap());
         req.headers_mut().set(ContentType::json());
@@ -158,15 +170,15 @@ impl Client {
                 })
                 .and_then(|(body, status)| {
                     result(match status {
-                        StatusCode::Ok => {
-                            serde_json::from_slice(body.as_ref()).map_err(RequestError::from)
-                        }
+                        StatusCode::Ok => serde_json::from_slice(body.as_ref())
+                            .map_err(RequestError::from),
                         _ => {
-                            let e =
-                                RequestError::from(match serde_json::from_slice(body.as_ref()) {
+                            let e = RequestError::from(
+                                match serde_json::from_slice(body.as_ref()) {
                                     Ok(bge) => RequestErrorKind::Broker(bge),
                                     Err(err) => RequestErrorKind::Json(err),
-                                });
+                                },
+                            );
                             Err(e)
                         }
                     })
@@ -244,7 +256,10 @@ impl Client {
             Ok(body) => body,
             Err(e) => return Box::new(err(SendError::from(e))),
         };
-        let mut req = Request::new(Put, self.make_uri(None, &name, Some(&language), &path));
+        let mut req = Request::new(
+            Put,
+            self.make_uri(None, &name, Some(&language), &path),
+        );
         {
             let headers = req.headers_mut();
             headers.set(ContentLength(body.len() as u64));
@@ -317,7 +332,9 @@ impl Default for Config {
 /// TODO: This can be made more efficient when
 /// [`conservative_impl_trait`](https://github.com/rust-lang/rust/issues/34511)
 /// is stabilized.
-pub struct ProductsIter<'a>(Box<Iterator<Item = (&'a Identifier, &'a ProductDescriptor)> + 'a>); // TODO Don't use a trait object.
+pub struct ProductsIter<'a>(
+    Box<Iterator<Item = (&'a Identifier, &'a ProductDescriptor)> + 'a>,
+); // TODO Don't use a trait object.
 
 impl<'a> Iterator for ProductsIter<'a> {
     type Item = (&'a Identifier, &'a ProductDescriptor);

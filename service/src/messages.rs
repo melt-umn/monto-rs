@@ -4,8 +4,9 @@
 
 use std::collections::BTreeSet;
 
-use monto3_common::messages::{NamespacedName, Product, ProductDescriptor, ProductIdentifier,
-                              ProtocolVersion, SoftwareVersion};
+use monto3_common::messages::{NamespacedName, Product, ProductDescriptor,
+                              ProductIdentifier, ProtocolVersion,
+                              SoftwareVersion};
 
 /// The Message that a Broker sends to a Service during version negotiation.
 ///

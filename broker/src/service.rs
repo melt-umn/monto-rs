@@ -5,7 +5,8 @@ use std::collections::BTreeSet;
 
 use futures::{Future, Stream};
 use futures::future::{err, ok, result};
-use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request, StatusCode};
+use hyper::{Body, Chunk, Client, Error as HyperError, Method, Request,
+            StatusCode};
 use hyper::client::HttpConnector;
 use hyper::error::UriError;
 use hyper::header::ContentType;
@@ -14,9 +15,11 @@ use serde_json;
 use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;
 
-use monto3_common::messages::{Product, ProductDescriptor, ProductIdentifier, ProtocolVersion};
-use monto3_service::messages::{BrokerRequest, ServiceBrokerNegotiation, ServiceErrors,
-                               ServiceExtension, ServiceNegotiation, ServiceProduct};
+use monto3_common::messages::{Product, ProductDescriptor, ProductIdentifier,
+                              ProtocolVersion};
+use monto3_service::messages::{BrokerRequest, ServiceBrokerNegotiation,
+                               ServiceErrors, ServiceExtension,
+                               ServiceNegotiation, ServiceProduct};
 
 use config::{Config, ServiceConfig};
 
@@ -48,9 +51,7 @@ impl Service {
         let client = Client::new(handle);
         let version_uri = format!(
             "{}://{}{}/version",
-            service_config.scheme,
-            service_config.addr,
-            service_config.base
+            service_config.scheme, service_config.addr, service_config.base
         ).parse()
             .expect("TODO Proper error handling");
         let mut request = Request::new(Method::Post, version_uri);
@@ -74,11 +75,14 @@ impl Service {
                 .request(request)
                 .map_err(ServiceConnectError::from)
                 .and_then(|res| match res.status() {
-                    StatusCode::Ok => res.body().concat2().map_err(ServiceConnectError::from),
+                    StatusCode::Ok => {
+                        res.body().concat2().map_err(ServiceConnectError::from)
+                    }
                     _ => panic!("TODO Error handling"),
                 })
                 .and_then(|body: Chunk| {
-                    result(serde_json::from_slice(body.as_ref())).map_err(ServiceConnectError::from)
+                    result(serde_json::from_slice(body.as_ref()))
+                        .map_err(ServiceConnectError::from)
                 })
                 .and_then(move |sn: ServiceNegotiation| {
                     let version = min(our_version, sn.monto);
@@ -107,9 +111,7 @@ impl Service {
     ) -> Box<Future<Item = ServiceProduct, Error = RequestError>> {
         let service_uri = format!(
             "{}://{}{}/service",
-            self.config.scheme,
-            self.config.addr,
-            self.config.base
+            self.config.scheme, self.config.addr, self.config.base
         ).parse()
             .expect("TODO Proper error handling");
         let mut request = Request::new(Method::Post, service_uri);
@@ -135,15 +137,22 @@ impl Service {
                 })
                 .and_then(|(status, body)| {
                     result(match status {
-                        StatusCode::Ok => {
-                            serde_json::from_slice(body.as_ref()).map_err(RequestError::from)
+                        StatusCode::Ok => serde_json::from_slice(body.as_ref())
+                            .map_err(RequestError::from),
+                        StatusCode::BadRequest => serde_json::from_slice(
+                            body.as_ref(),
+                        ).map_err(RequestError::from)
+                            .and_then(|pd| {
+                                Err(RequestErrorKind::NotExposed(pd).into())
+                            }),
+                        StatusCode::InternalServerError => {
+                            serde_json::from_slice(body.as_ref())
+                                .map_err(RequestError::from)
+                                .and_then(|ses| {
+                                    Err(RequestErrorKind::ServiceErrors(ses)
+                                        .into())
+                                })
                         }
-                        StatusCode::BadRequest => serde_json::from_slice(body.as_ref())
-                            .map_err(RequestError::from)
-                            .and_then(|pd| Err(RequestErrorKind::NotExposed(pd).into())),
-                        StatusCode::InternalServerError => serde_json::from_slice(body.as_ref())
-                            .map_err(RequestError::from)
-                            .and_then(|ses| Err(RequestErrorKind::ServiceErrors(ses).into())),
                         _ => panic!("TODO Proper error handling"),
                     })
                 }),

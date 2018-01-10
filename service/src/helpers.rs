@@ -4,13 +4,16 @@ use std::fmt::Display;
 
 use serde_json::Value;
 
-use monto3_common::messages::{Language, Product, ProductIdentifier, ProductName};
+use monto3_common::messages::{Language, Product, ProductIdentifier,
+                              ProductName};
 
 use messages::{ServiceError, ServiceNotice};
 
 /// Serves as the body of a ServiceProvider that only operates on the source of
 /// a single product.
-pub fn one_to_one_fn<F: FnOnce(Value) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>)>(
+pub fn one_to_one_fn<
+    F: FnOnce(Value) -> (Result<Value, Vec<ServiceError>>, Vec<ServiceNotice>),
+>(
     path: &str,
     mut products: Vec<Product>,
     pn: ProductName,

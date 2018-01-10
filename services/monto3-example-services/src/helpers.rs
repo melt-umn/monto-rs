@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use monto3_common::messages::{Language, Product, ProductIdentifier, ProductName};
+use monto3_common::messages::{Language, Product, ProductIdentifier,
+                              ProductName};
 use monto3_service::messages::{ServiceError, ServiceNotice};
 use serde_json::Value;
 
@@ -16,7 +17,9 @@ pub fn simple_fn<E: Display, F: FnOnce(String) -> Result<Value, E>>(
 
     let r = if let Some(idx) = idx {
         match products.swap_remove(idx).value {
-            Value::String(src) => f(src).map_err(|e| ServiceError::Other(e.to_string())),
+            Value::String(src) => {
+                f(src).map_err(|e| ServiceError::Other(e.to_string()))
+            }
             _ => Err(ServiceError::Other("bad source product".to_string())),
         }
     } else {

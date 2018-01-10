@@ -45,7 +45,11 @@ fn main() {
     // Start logging.
     let verbosity = 3 + matches.occurrences_of("verbose");
     let quietness = matches.occurrences_of("quiet");
-    let log_level = if quietness > verbosity { 0 } else { verbosity - quietness };
+    let log_level = if quietness > verbosity {
+        0
+    } else {
+        verbosity - quietness
+    };
     pretty_logger::init_level(match log_level {
         0 => LogLevelFilter::Off,
         1 => LogLevelFilter::Error,
@@ -103,12 +107,21 @@ fn fetch(args: &ArgMatches, mut client: Client, mut core: Core) {
     // Get the arguments as strings.
     let service = args.value_of("service").unwrap();
     let product = args.value_of("product").unwrap();
-    let language: Language = args.value_of("language").unwrap().to_string().into();
+    let language: Language =
+        args.value_of("language").unwrap().to_string().into();
     let path = args.value_of("path").unwrap();
 
     // Parse the arguments.
-    let service = must(service.parse().map_err(|()| format!("{} is not a valid identifier", service)));
-    let product = must(product.parse().map_err(|()| format!("{} is not a valid identifier", product)));
+    let service = must(
+        service
+            .parse()
+            .map_err(|()| format!("{} is not a valid identifier", service)),
+    );
+    let product = must(
+        product
+            .parse()
+            .map_err(|()| format!("{} is not a valid identifier", product)),
+    );
 
     // Send the sources.
     for source in args.values_of("sources").unwrap_or_default() {
@@ -139,7 +152,9 @@ fn list(_args: &ArgMatches, client: Client, _core: Core) {
         .group_by(|&(ref s, _, _)| s.clone());
     for (service, rest) in products.into_iter() {
         println!("{}", service);
-        for (lang, rest) in rest.group_by(|&(_, ref l, _)| l.clone()).into_iter() {
+        for (lang, rest) in
+            rest.group_by(|&(_, ref l, _)| l.clone()).into_iter()
+        {
             println!("\t{}", lang);
             for (_, _, product) in rest {
                 println!("\t\t{}", product);

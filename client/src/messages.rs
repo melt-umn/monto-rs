@@ -6,8 +6,8 @@ use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use monto3_common::messages::{Identifier, NamespacedName, ProductIdentifier, ProtocolVersion,
-                              SoftwareVersion};
+use monto3_common::messages::{Identifier, NamespacedName, ProductIdentifier,
+                              ProtocolVersion, SoftwareVersion};
 use monto3_service::messages::ServiceNegotiation;
 
 /// The Message that a Client sends to a Broker during version negotiation.
@@ -128,12 +128,12 @@ pub enum BrokerGetError {
 impl Display for BrokerGetError {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
-            BrokerGetError::NoSuchService => {
-                fmt.write_str("A Product was requested from a nonexistent Service")
-            }
-            BrokerGetError::NoSuchProduct => {
-                fmt.write_str("A Product was requested that the Service does not expose")
-            }
+            BrokerGetError::NoSuchService => fmt.write_str(
+                "A Product was requested from a nonexistent Service",
+            ),
+            BrokerGetError::NoSuchProduct => fmt.write_str(
+                "A Product was requested that the Service does not expose",
+            ),
             BrokerGetError::ServiceError {
                 ref service,
                 ref error,
@@ -141,7 +141,9 @@ impl Display for BrokerGetError {
             BrokerGetError::ServiceConnectError {
                 ref service,
                 ref error,
-            } => write!(fmt, "When connecting to service {}: {}", service, error),
+            } => {
+                write!(fmt, "When connecting to service {}: {}", service, error)
+            }
             BrokerGetError::Unresolvable(ref pi) => {
                 write!(fmt, "A product was unresolvable: {:?}", pi)
             }
@@ -152,12 +154,16 @@ impl Display for BrokerGetError {
 impl Error for BrokerGetError {
     fn description(&self) -> &str {
         match *self {
-            BrokerGetError::NoSuchService => "A Product was requested from a nonexistent Service",
+            BrokerGetError::NoSuchService => {
+                "A Product was requested from a nonexistent Service"
+            }
             BrokerGetError::NoSuchProduct => {
                 "A Product was requested that the Service does not expose"
             }
             BrokerGetError::ServiceError { .. } => "An error from a service",
-            BrokerGetError::ServiceConnectError { .. } => "An error trying to connect to a Service",
+            BrokerGetError::ServiceConnectError { .. } => {
+                "An error trying to connect to a Service"
+            }
             BrokerGetError::Unresolvable(_) => "A product was unresolvable",
         }
     }

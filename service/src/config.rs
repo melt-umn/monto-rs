@@ -79,21 +79,27 @@ impl Config {
             Err(e) => {
                 error!("Failed to load config from current directory: {}", e);
                 match Directories::with_prefix(name, name) {
-                    Ok(dirs) => match Config::load_one(dirs.config_home(), name) {
-                        Ok(c) => return c,
-                        Err(e) => {
-                            error!("Failed to load config from config directory: {}", e);
-                            match home_dir() {
-                                Some(home_dir) => match Config::load_one(home_dir, name) {
-                                    Ok(c) => return c,
-                                    Err(e) => {
-                                        error!("Failed to load config from home directory: {}", e);
+                    Ok(dirs) => {
+                        match Config::load_one(dirs.config_home(), name) {
+                            Ok(c) => return c,
+                            Err(e) => {
+                                error!("Failed to load config from config directory: {}", e);
+                                match home_dir() {
+                                    Some(home_dir) => {
+                                        match Config::load_one(home_dir, name) {
+                                            Ok(c) => return c,
+                                            Err(e) => {
+                                                error!("Failed to load config from home directory: {}", e);
+                                            }
+                                        }
                                     }
-                                },
-                                None => error!("Could not identify home directory"),
+                                    None => error!(
+                                        "Could not identify home directory"
+                                    ),
+                                }
                             }
                         }
-                    },
+                    }
                     Err(e) => {
                         error!("Failed to find config directory: {}", e);
                     }
@@ -129,7 +135,8 @@ impl Config {
         path.set_extension("toml");
 
         // Open the file.
-        let mut f = File::open(&path).chain_err(|| ErrorKind::CouldntFindConfig(path.clone()))?;
+        let mut f = File::open(&path)
+            .chain_err(|| ErrorKind::CouldntFindConfig(path.clone()))?;
 
         // Create a buffer to store the file, and read the file into it.
         let mut buf = Vec::new();

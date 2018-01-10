@@ -10,6 +10,8 @@ extern crate futures;
 extern crate hyper;
 extern crate itertools;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate log;
 extern crate mime;
 extern crate monto3_client;
@@ -27,6 +29,8 @@ extern crate void;
 
 pub mod client;
 pub mod config;
+mod consts;
+mod errors;
 pub mod resolve;
 pub mod service;
 
@@ -43,17 +47,17 @@ use monto3_common::messages::{Identifier, ProtocolVersion, SoftwareVersion};
 use monto3_service::messages::ServiceBrokerNegotiation;
 
 use config::Config;
-use resolve::Cache;
-use service::{Service, ServiceConnectError, ServiceConnectErrorKind};
+pub use errors::{Error, ErrorKind, Result, ResultExt};
+use resolve::{Cache, Watcher};
+use service::Service;
 
 /// The Broker.
 pub struct Broker {
-    cache: Rc<RefCell<Cache>>,
+    cache: Cache,
     config: Config,
     handle: Handle,
     services: Vec<Service>,
-
-    // TODO
+    watcher: Watcher,
 }
 
 impl Broker {
@@ -66,9 +70,9 @@ impl Broker {
     pub fn new(
         config: Config,
         handle: Handle,
-    ) -> Box<Future<Item = Broker, Error = NewBrokerError>> {
-        let cache = match Cache::new(&handle) {
-            Ok(cache) => cache,
+    ) -> Box<Future<Item = Broker, Error = Error>> {
+        let watcher = match Watcher::new() {
+            Ok(watcher) => watcher,
             Err(e) => return Box::new(err(e.into())),
         };
         let futures = config
@@ -76,16 +80,18 @@ impl Broker {
             .clone()
             .into_iter()
             .map(|s| {
-                Service::connect(config.clone(), s, &handle).map_err(NewBrokerError::from)
+                Service::connect(config.clone(), s, &handle)
+                    .map_err(Error::from)
             })
             .collect::<Vec<_>>();
         Box::new(join_all(futures).map(|services| {
             info!("Connected to all services: {:?}", services);
             Broker {
-                cache,
+                cache: Cache::new(),
                 config,
                 handle,
                 services,
+                watcher,
             }
         }))
     }
@@ -133,19 +139,5 @@ impl Broker {
     /// Returns the version information for the Broker.
     pub fn version(&self) -> SoftwareVersion {
         self.config.version.clone().into()
-    }
-}
-
-error_chain! {
-    types {
-        NewBrokerError, NewBrokerErrorKind, NewBrokerResultExt;
-    }
-    foreign_links {
-        Notify(NotifyError)
-            #[doc = "An error setting up the notifier."];
-    }
-    links {
-        ServiceConnect(ServiceConnectError, ServiceConnectErrorKind)
-            #[doc = "An error connecting to a service."];
     }
 }

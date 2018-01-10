@@ -2,8 +2,6 @@
 //! in
 //! [Section 5](https://melt-umn.github.io/monto-v3-draft/draft03/#5-the-service-protocol)
 //! of the specification.
-//!
-//! This ought to be rewritten to use a trait for ServiceFn.
 
 #[macro_use]
 extern crate clap;
@@ -15,17 +13,17 @@ extern crate futures;
 extern crate hyper;
 #[macro_use]
 extern crate log;
-#[doc(hidden)]
-pub extern crate monto3_common;
 extern crate rand;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-#[doc(hidden)]
-pub extern crate serde_json;
 extern crate tokio_core;
 extern crate toml;
 extern crate void;
+#[doc(hidden)]
+pub extern crate monto3_common;
+#[doc(hidden)]
+pub extern crate serde_json;
 
 #[macro_use]
 mod macros;

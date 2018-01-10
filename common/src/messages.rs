@@ -42,7 +42,8 @@ impl<'de> Deserialize<'de> for Identifier {
                     static ref PART: Regex = Regex::new("[a-zA-Z_][a-zA-Z_0-9]*").unwrap();
                 }
 
-                let mut parts = v.split('.').map(str::to_owned).collect::<Vec<_>>();
+                let mut parts =
+                    v.split('.').map(str::to_owned).collect::<Vec<_>>();
                 if parts.len() < 2 || parts.iter().any(|p| !PART.is_match(p)) {
                     return Err(Error::invalid_value(Unexpected::Str(v), &self));
                 }
@@ -141,7 +142,10 @@ impl<'de> Deserialize<'de> for Language {
             fn visit_str<E: SerdeError>(self, s: &str) -> Result<Language, E> {
                 self.visit_string(s.to_string())
             }
-            fn visit_string<E: SerdeError>(self, s: String) -> Result<Language, E> {
+            fn visit_string<E: SerdeError>(
+                self,
+                s: String,
+            ) -> Result<Language, E> {
                 Ok(s.into())
             }
         }
@@ -168,7 +172,10 @@ impl From<String> for Language {
 }
 
 impl Serialize for Language {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
         let s = self.to_string();
         serializer.serialize_str(&s)
     }
@@ -229,7 +236,8 @@ pub struct Product {
 /// Defined in
 /// [Section 3.1.4](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-4-productdescriptor)
 /// of the specification.
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd,
+         Serialize)]
 pub struct ProductDescriptor {
     /// The name of the Product.
     pub name: ProductName,
@@ -252,7 +260,8 @@ impl From<ProductIdentifier> for ProductDescriptor {
 /// Defined in
 /// [Section 3.1.5](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-5-productidentifier)
 /// of the specification.
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd,
+         Serialize)]
 pub struct ProductIdentifier {
     /// The name of the Product.
     pub name: ProductName,
@@ -318,7 +327,10 @@ impl<'de> Deserialize<'de> for ProductName {
             fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
                 write!(fmt, "an identifier")
             }
-            fn visit_str<E: SerdeError>(self, s: &str) -> Result<ProductName, E> {
+            fn visit_str<E: SerdeError>(
+                self,
+                s: &str,
+            ) -> Result<ProductName, E> {
                 s.parse().map_err(|()| E::custom("not an identifier"))
             }
         }
@@ -353,7 +365,10 @@ impl FromStr for ProductName {
 }
 
 impl Serialize for ProductName {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
         let s = self.to_string();
         serializer.serialize_str(&s)
     }
@@ -430,7 +445,8 @@ impl PartialOrd for ProtocolVersion {
 /// Defined in
 /// [Section 3.1.8](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-8-softwareversion)
 /// of the specification.
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd,
+         Serialize)]
 pub struct SoftwareVersion {
     /// The identifier of the Client, Broker, or Service.
     pub id: Identifier,
@@ -460,7 +476,9 @@ impl Display for SoftwareVersion {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         write!(fmt, "{}", self.id)?;
         match (&self.name, &self.vendor) {
-            (&Some(ref name), &Some(ref vendor)) => write!(fmt, " ({} by {})", name, vendor)?,
+            (&Some(ref name), &Some(ref vendor)) => {
+                write!(fmt, " ({} by {})", name, vendor)?
+            }
             (&Some(ref name), &None) => write!(fmt, " ({})", name)?,
             (&None, &Some(ref vendor)) => write!(fmt, " by {}", vendor)?,
             (&None, &None) => {}

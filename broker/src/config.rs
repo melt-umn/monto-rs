@@ -87,7 +87,8 @@ impl Config {
             (@arg CONFIG: --config +takes_value "The path to the config file.")
         ).get_matches();
         if let Some(config_path) = matches.value_of_os("CONFIG") {
-            Config::load_one(&config_path).unwrap_or_else(|| panic!("Failed to load config."))
+            Config::load_one(&config_path)
+                .unwrap_or_else(|| panic!("Failed to load config."))
         } else {
             Config::load()
         }
@@ -106,7 +107,11 @@ impl Config {
             Ok(f) => f,
             Err(err) => {
                 if err.kind() != ErrorKind::NotFound {
-                    error!("Error opening config file `{}': {}", path.display(), err);
+                    error!(
+                        "Error opening config file `{}': {}",
+                        path.display(),
+                        err
+                    );
                 }
                 return None;
             }
@@ -123,7 +128,11 @@ impl Config {
         match from_slice(&buf) {
             Ok(config) => Some(config),
             Err(err) => {
-                error!("Error parsing config file `{}': {}", path.display(), err);
+                error!(
+                    "Error parsing config file `{}': {}",
+                    path.display(),
+                    err
+                );
                 None
             }
         }

@@ -47,10 +47,11 @@ struct MeltError {
 
 impl MeltError {
     fn convert(self, path: &str) -> Result<Error, Box<StdError>> {
-        let (s, e) = pos_to_byte(path, (self.start_line, self.start_col), (
-            self.end_line,
-            self.end_col,
-        ))?;
+        let (s, e) = pos_to_byte(
+            path,
+            (self.start_line, self.start_col),
+            (self.end_line, self.end_col),
+        )?;
         Ok(Error {
             message: self.message,
             severity: self.severity,

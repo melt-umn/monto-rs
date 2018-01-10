@@ -11,13 +11,14 @@ use futures::future::{err, ok};
 use serde_json::Value;
 
 use monto3_client::messages::BrokerGetError;
-use monto3_common::messages::{Identifier, Product, ProductDescriptor, ProductIdentifier,
-                              ProductName};
+use monto3_common::messages::{Identifier, Product, ProductDescriptor,
+                              ProductIdentifier, ProductName};
 use monto3_service::messages::{ServiceError, ServiceErrors, ServiceNotice};
 
 use Broker;
 use client::Client;
 pub use resolve::cache::Cache;
+pub use resolve::watcher::{WatchEvent, Watcher};
 use service::{RequestError, RequestErrorKind};
 
 impl Client {
@@ -32,42 +33,54 @@ impl Client {
         let broker = self2.0.borrow();
         info!("getting {:?} from {}", pi, si);
 
+        /*
         if let Some(gp) = broker.from_cache(pi.clone()) {
             Box::new(ok(gp))
         } else {
             if let Some(service) = broker.find_service(&si) {
-                Box::new(service.request(pi.clone(), &ps).then(move |r| match r {
-                    Ok(sp) => Box::new(ok(sp.product)),
-                    Err(RequestError(e, _)) => {
-                        error!("{}", e);
-                        match e {
-                            RequestErrorKind::Hyper(e) => {
-                                Box::new(err(BrokerGetError::ServiceConnectError {
-                                    service: si,
-                                    error: e.to_string(),
-                                }))
-                            }
-                            RequestErrorKind::ServiceErrors(ServiceErrors { errors, notices }) => {
-                                for ServiceNotice::UnusedDependency(pi) in notices {
-                                    let idx = ps.iter()
-                                        .cloned()
-                                        .map(ProductIdentifier::from)
-                                        .position(|pi2| pi2 == pi);
-                                    if let Some(idx) = idx {
-                                        ps.swap_remove(idx);
-                                    } else {
-                                        warn!("Couldn't find {:?} in {:?}", pi, ps);
+                Box::new(service.request(pi.clone(), &ps).then(
+                    move |r| match r {
+                        Ok(sp) => Box::new(ok(sp.product)),
+                        Err(RequestError(e, _)) => {
+                            error!("{}", e);
+                            match e {
+                                RequestErrorKind::Hyper(e) => Box::new(err(
+                                    BrokerGetError::ServiceConnectError {
+                                        service: si,
+                                        error: e.to_string(),
+                                    },
+                                )),
+                                RequestErrorKind::ServiceErrors(
+                                    ServiceErrors { errors, notices },
+                                ) => {
+                                    for ServiceNotice::UnusedDependency(pi) in
+                                        notices
+                                    {
+                                        let idx = ps.iter()
+                                            .cloned()
+                                            .map(ProductIdentifier::from)
+                                            .position(|pi2| pi2 == pi);
+                                        if let Some(idx) = idx {
+                                            ps.swap_remove(idx);
+                                        } else {
+                                            warn!(
+                                                "Couldn't find {:?} in {:?}",
+                                                pi, ps
+                                            );
+                                        }
                                     }
+                                    self.resolve_next(si, pi, ps, errors)
                                 }
-                                self.resolve_next(si, pi, ps, errors)
+                                _ => Box::new(err(
+                                    BrokerGetError::ServiceError {
+                                        service: si,
+                                        error: e.to_string(),
+                                    },
+                                )),
                             }
-                            _ => Box::new(err(BrokerGetError::ServiceError {
-                                service: si,
-                                error: e.to_string(),
-                            })),
                         }
-                    }
-                }))
+                    },
+                ))
             } else {
                 Box::new(err(BrokerGetError::NoSuchService))
             }
@@ -119,6 +132,8 @@ impl Client {
         } else {
             Box::new(err(BrokerGetError::Unresolvable(pi)))
         }
+    */
+        unimplemented!()
     }
 
     /// Handles the error case of resolve.
@@ -132,15 +147,20 @@ impl Client {
         if let Some(se) = es.pop() {
             match se {
                 ServiceError::UnmetDependency(pi2) => {
+                    /*
                     Box::new(self.clone().resolve_dep(pi2).and_then(|p| {
                         ps.push(p);
                         self.resolve_next(si, pi, ps, es)
                     }))
+                    */
+                    unimplemented!()
                 }
-                ServiceError::Other(s) => Box::new(err(BrokerGetError::ServiceError {
-                    service: si,
-                    error: s,
-                })),
+                ServiceError::Other(s) => {
+                    Box::new(err(BrokerGetError::ServiceError {
+                        service: si,
+                        error: s,
+                    }))
+                }
             }
         } else {
             self.resolve(si, pi, ps)
@@ -150,8 +170,12 @@ impl Client {
 
 impl Broker {
     /// Tries to retrieve a product from the cache.
-    fn from_cache(&self, pi: ProductIdentifier) -> Option<Product> {
-        let cache = self.cache.borrow();
-        cache.get(pi)
+    fn from_cache(&self, identifier: ProductIdentifier) -> Option<Product> {
+        self.cache.get(identifier.clone()).map(|value| Product {
+            name: identifier.name,
+            language: identifier.language,
+            path: identifier.path,
+            value: value.clone(),
+        })
     }
 }

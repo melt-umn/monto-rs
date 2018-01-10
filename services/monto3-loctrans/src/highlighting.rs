@@ -46,10 +46,11 @@ struct MeltToken {
 
 impl MeltToken {
     fn convert(self, path: &str) -> Result<HighlightingToken, Box<Error>> {
-        let (s, e) = pos_to_byte(path, (self.start_line, self.start_col), (
-            self.end_line,
-            self.end_col,
-        ))?;
+        let (s, e) = pos_to_byte(
+            path,
+            (self.start_line, self.start_col),
+            (self.end_line, self.end_col),
+        )?;
         Ok(HighlightingToken {
             color: self.color,
             start_byte: s,

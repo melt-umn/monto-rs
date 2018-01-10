@@ -1,120 +1,88 @@
-use std::cell::RefCell;
-use std::collections::{BTreeMap, BTreeSet};
-use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::sync::mpsc::{channel, Receiver, TryRecvError};
-use std::time::Duration;
+use std::collections::BTreeMap;
+use std::collections::btree_map::Entry;
 
-use notify::{DebouncedEvent, Error as NotifyError, RecommendedWatcher, RecursiveMode,
-             Watcher as NotifyWatcher};
 use serde_json::Value;
-use tokio_core::reactor::Handle;
 
-use monto3_common::messages::{Product, ProductDescriptor, ProductIdentifier};
-
-use resolve::watcher::Watcher;
+use monto3_common::messages::{Product, ProductIdentifier};
 
 /// A cache for products.
+#[derive(Debug)]
 pub struct Cache {
-    products: BTreeMap<PathBuf, BTreeMap<ProductDescriptor, Value>>,
-    watcher: RecommendedWatcher,
-    watching: BTreeSet<PathBuf>,
-    watch_chan: Receiver<DebouncedEvent>,
+    /// A map from every product that has ever been in the cache to:
+    ///
+    ///  - The current version of the product (used for invalidation), and
+    ///  - Possibly (unless the product has been invalidated (e.g. by being deleted on disk)):
+    ///    - The value of the current version
+    ///    - The version and identifier of each dependency.
+    products: BTreeMap<
+        ProductIdentifier,
+        (Version, Option<(Value, Vec<(ProductIdentifier, Version)>)>),
+    >,
 }
 
 impl Cache {
-    /// Creates a new cache.
-    pub fn new(handle: &Handle) -> Result<Rc<RefCell<Cache>>, NotifyError> {
-        let (send, recv) = channel();
-        let watcher = RecommendedWatcher::new(send, Duration::from_millis(100))?;
-        let cache = Rc::new(RefCell::new(Cache {
-            products: BTreeMap::new(),
-            watcher: watcher,
-            watching: BTreeSet::new(),
-            watch_chan: recv,
-        }));
-        handle.spawn(Watcher::new(cache.clone()));
-        Ok(cache)
+    /// Creates a new `Cache`.
+    pub fn new() -> Cache {
+        unimplemented!()
     }
 
-    /// Returns the next event received by the FS watcher.
-    pub(crate) fn event(&self) -> Option<DebouncedEvent> {
-        match self.watch_chan.try_recv() {
-            Ok(ev) => Some(ev),
-            Err(TryRecvError::Disconnected) => {
-                error!(
-                    "The filesystem watcher died; https://twitter.com/rob_pike/status/447202124753952768"
-                );
-                None
+    /// Inserts a new product into the cache, replacing any copies of the old
+    /// one.
+    pub fn add<I: IntoIterator<Item = ProductIdentifier>>(
+        &mut self,
+        product: Product,
+        dependencies: I,
+    ) {
+        let identifier = ProductIdentifier {
+            name: product.name,
+            language: product.language,
+            path: product.path,
+        };
+        let dependencies = dependencies
+            .into_iter()
+            .map(|id| (id.clone(), self.get_version(id)))
+            .collect();
+        match self.products.entry(identifier) {
+            Entry::Vacant(entry) => {
+                entry.insert((
+                    Version::default(),
+                    Some((product.value, dependencies)),
+                ));
             }
-            Err(TryRecvError::Empty) => None,
+            Entry::Occupied(entry) => {
+                let entry = entry.into_mut();
+                entry.0.bump();
+                entry.1 = Some((product.value, dependencies));
+            }
         }
     }
 
-    /// Adds a product to the cache, replacing any other product that was
-    /// previously present.
-    pub fn add(&mut self, product: Product) {
-        let Product {
-            name,
-            language,
-            path,
-            value,
-        } = product;
-        info!("Added to cache: {} {} {}", name, language, path);
+    /// Gets the `Value` associated with a `ProductIdentifier`, if it exists
+    /// and is valid.
+    pub fn get(&self, identifier: ProductIdentifier) -> Option<&Value> {
+        unimplemented!()
+    }
 
-        let desc = ProductDescriptor { name, language };
-        let path = PathBuf::from(path);
+    /// Gets the `Version` associated with a `ProductIdentifier` or creates an
+    /// empty cache entry for the `ProductIdentifier`.
+    fn get_version(&mut self, identifier: ProductIdentifier) -> Version {
         self.products
-            .entry(path.clone())
-            .or_insert_with(BTreeMap::new)
-            .insert(desc, value);
-        if self.watching.insert(path.clone()) {
-            if let Err(err) = self.watcher.watch(path, RecursiveMode::Recursive) {
-                error!("{}", err);
-            }
-        }
-    }
-
-    /// Removes all products with the given path from the cache.
-    pub fn evict_by_path(&mut self, path: PathBuf) {
-        let _ = self.products.remove(&path);
-        if self.watching.remove(&path) {
-            if let Err(err) = self.watcher.unwatch(path) {
-                error!("{}", err);
-            }
-        }
-    }
-
-    /// Retrieves a product from the cache.
-    pub fn get(&self, pi: ProductIdentifier) -> Option<Product> {
-        info!("Cache request for {:?}", pi);
-
-        let path = PathBuf::from(&pi.path);
-        self.products.get(&path).and_then(move |m| {
-            let ProductIdentifier {
-                language,
-                name,
-                path,
-            } = pi;
-            let pd = ProductDescriptor { language, name };
-            m.get(&pd).map(move |value| {
-                Product {
-                    language: pd.language,
-                    name: pd.name,
-                    path: path,
-                    value: value.clone(),
-                }
-            })
-        })
+            .entry(identifier)
+            .or_insert((Version::default(), None))
+            .0
     }
 }
 
-impl Debug for Cache {
-    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.debug_struct("Cache")
-            .field("products", &self.products)
-            .field("watching", &self.watching)
-            .finish()
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+struct Version(usize);
+
+impl Version {
+    fn bump(&mut self) {
+        *self = self.next();
+    }
+
+    fn next(self) -> Version {
+        let Version(n) = self;
+        Version(n + 1)
     }
 }

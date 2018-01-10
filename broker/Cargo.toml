@@ -22,6 +22,7 @@ tokio-core = "0.1.10"
 toml = "0.4.5"
 url = "1.6.0"
 void = "1.0.2"
+lazy_static = "1.0.0"
 
 [dependencies.monto3-client]
 path = "../client"
