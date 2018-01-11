@@ -5,6 +5,7 @@ extern crate either;
 #[macro_use]
 extern crate log;
 extern crate monto3_common;
+extern crate monto3_protocol;
 #[macro_use]
 extern crate monto3_service;
 extern crate pretty_logger;

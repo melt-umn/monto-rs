@@ -4,7 +4,7 @@ extern crate itertools;
 #[macro_use]
 extern crate log;
 extern crate monto3_client;
-extern crate monto3_common;
+extern crate monto3_protocol;
 extern crate pretty_logger;
 extern crate tokio_core;
 
@@ -17,7 +17,7 @@ use log::LogLevelFilter;
 use tokio_core::reactor::Core;
 
 use monto3_client::{Client, Config};
-use monto3_common::messages::{Language, ProductIdentifier, SoftwareVersion};
+use monto3_protocol::{Language, ProductIdentifier, SoftwareVersion};
 
 fn main() {
     // Parse CLI arguments.

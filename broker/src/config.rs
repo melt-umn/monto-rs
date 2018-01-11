@@ -6,9 +6,9 @@ use std::path::Path;
 
 use url::Url;
 
-use monto3_client::messages::ClientExtension;
-use monto3_common::messages::{Identifier, SoftwareVersion};
-use monto3_service::messages::ServiceExtension;
+use monto3_protocol::{Identifier, SoftwareVersion};
+use monto3_protocol::client::ClientExtension;
+use monto3_protocol::service::ServiceExtension;
 
 /// The Broker's configuration.
 ///

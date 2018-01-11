@@ -9,8 +9,10 @@ members = [
 	"broker",
 	"client",
 	"common",
+	"protocol",
 	"service",
 	"services/monto3-cpp",
 	"services/monto3-example-services",
 	"services/monto3-loctrans",
+	"utils",
 ]

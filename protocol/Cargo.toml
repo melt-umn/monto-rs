@@ -1,0 +1,14 @@
+[package]
+name = "monto3-protocol"
+description = "Types useful for implementing the Monto protocols."
+version = "0.1.0"
+authors = ["Nathaniel Ringo <remexre@gmail.com>"]
+
+[dependencies]
+regex = "0.2.5"
+semver = "0.9.0"
+serde = "1.0.27"
+serde_json = "1.0.9"
+serde_derive = "1.0.27"
+lazy_static = "1.0.0"
+void = "1.0.2"

@@ -1,0 +1,17 @@
+[package]
+name = "monto3-utils"
+version = "0.1.0"
+authors = ["Nathan Ringo <remexre@gmail.com>"]
+
+[dependencies]
+error-chain = "0.11.0"
+hyper = "0.11.12"
+url = "1.6.0"
+tokio-core = "0.1.12"
+serde = "1.0.27"
+serde_json = "1.0.9"
+futures = "0.1.17"
+
+[dependencies.monto3-protocol]
+path = "../protocol"
+version = "0.1.0"

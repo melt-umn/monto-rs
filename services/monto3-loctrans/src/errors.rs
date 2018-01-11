@@ -1,9 +1,9 @@
 use std::error::Error as StdError;
 
-use monto3_common::messages::Language;
-use monto3_common::products::{Error, ErrorSeverity};
+use monto3_protocol::Language;
+use monto3_protocol::products::{Error, ErrorSeverity};
+use monto3_protocol::service::ServiceError;
 use monto3_service::helpers::one_to_one_fn;
-use monto3_service::messages::ServiceError;
 use serde_json::{from_value, to_value};
 
 use pos_to_byte;

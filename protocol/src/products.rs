@@ -10,7 +10,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error as SerdeError, Unexpected, Visitor};
 use serde_json::{to_value, Value};
 
-use messages::{Language, Product, ProductName};
+use {Language, Product, ProductName};
 
 /// A listing of a directory.
 ///

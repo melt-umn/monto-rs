@@ -4,17 +4,8 @@
 extern crate either;
 extern crate futures;
 extern crate hyper;
-#[macro_use]
-extern crate lazy_static;
-extern crate regex;
-extern crate semver;
 extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 extern crate serde_json;
-
-pub mod messages;
-pub mod products;
 
 use either::{Either, Left, Right};
 use futures::{Future, Stream};

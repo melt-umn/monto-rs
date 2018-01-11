@@ -9,8 +9,10 @@ dirs = "0.3.1"
 either = "1.4.0"
 error-chain = "0.11.0"
 futures = "0.1.17"
+gotham = "0.1.2"
 hyper = "0.11.7"
 itertools = "0.7.3"
+lazy_static = "1.0.0"
 log = "0.3.8"
 mime = "0.3.5"
 notify = "4.0.3"
@@ -22,19 +24,22 @@ tokio-core = "0.1.10"
 toml = "0.4.5"
 url = "1.6.0"
 void = "1.0.2"
-lazy_static = "1.0.0"
 
 [dependencies.monto3-client]
 path = "../client"
-version = "0.1.0"
+version = "0.2.0"
 
 [dependencies.monto3-common]
 path = "../common"
+version = "0.2.0"
+
+[dependencies.monto3-protocol]
+path = "../protocol"
 version = "0.1.0"
 
 [dependencies.monto3-service]
 path = "../service"
-version = "0.1.0"
+version = "0.2.0"
 
 [[bin]]
 name = "monto3-broker"

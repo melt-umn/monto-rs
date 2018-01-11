@@ -3,6 +3,7 @@ extern crate either;
 extern crate futures;
 #[macro_use]
 extern crate log;
+extern crate monto3_protocol;
 #[macro_use]
 extern crate monto3_service;
 extern crate pretty_logger;
@@ -13,9 +14,9 @@ extern crate void;
 use std::process::Command;
 
 use either::{Left, Right};
+use monto3_protocol::service::ServiceError;
 use monto3_service::Service;
 use monto3_service::config::Config;
-use monto3_service::messages::ServiceError;
 use serde_json::Value;
 use tokio_core::reactor::Core;
 use void::unreachable;

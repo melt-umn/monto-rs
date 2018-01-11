@@ -1,9 +1,9 @@
 use std::error::Error;
 
-use monto3_common::messages::Language;
-use monto3_common::products::{HighlightingColor, HighlightingToken};
+use monto3_protocol::Language;
+use monto3_protocol::products::{HighlightingColor, HighlightingToken};
+use monto3_protocol::service::ServiceError;
 use monto3_service::helpers::one_to_one_fn;
-use monto3_service::messages::ServiceError;
 use serde_json::{from_value, to_value};
 
 use pos_to_byte;

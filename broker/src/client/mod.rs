@@ -25,7 +25,7 @@ use url::form_urlencoded::parse as parse_query;
 use void::Void;
 
 use monto3_common::{error_response, json_request};
-use monto3_common::messages::{Language, ProductIdentifier, ProductName};
+use monto3_protocol::{Language, ProductIdentifier, ProductName};
 
 use Broker;
 

@@ -10,6 +10,7 @@ extern crate hyper;
 #[macro_use]
 extern crate log;
 extern crate monto3_common;
+extern crate monto3_protocol;
 extern crate monto3_service;
 extern crate serde;
 #[macro_use]
@@ -18,7 +19,6 @@ extern crate serde_json;
 extern crate tokio_core;
 extern crate url;
 
-pub mod messages;
 mod negotiation;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -33,12 +33,13 @@ use hyper::header::{ContentLength, ContentType};
 use tokio_core::reactor::Handle;
 use url::Url;
 
-use monto3_common::messages::{Identifier, Language, Product,
-                              ProductDescriptor, ProductIdentifier,
-                              ProductName, ProtocolVersion, SoftwareVersion};
-use monto3_common::products::Source;
+use monto3_protocol::{Identifier, Language, Product, ProductDescriptor,
+                      ProductIdentifier, ProductName, ProtocolVersion,
+                      SoftwareVersion};
+use monto3_protocol::client::{BrokerGetError, BrokerPutError,
+                              ClientNegotiation};
+use monto3_protocol::products::Source;
 
-use messages::{BrokerGetError, BrokerPutError, ClientNegotiation};
 pub use negotiation::{Negotiation, NegotiationError, NegotiationErrorKind};
 
 type HttpClient = hyper::client::Client<hyper::client::HttpConnector>;

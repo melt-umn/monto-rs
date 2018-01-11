@@ -15,9 +15,9 @@ use serde_json;
 use serde_json::Error as JsonError;
 use tokio_core::reactor::Handle;
 
-use monto3_common::messages::{Product, ProductDescriptor, ProductIdentifier,
-                              ProtocolVersion};
-use monto3_service::messages::{BrokerRequest, ServiceBrokerNegotiation,
+use monto3_protocol::{Product, ProductDescriptor, ProductIdentifier,
+                      ProtocolVersion};
+use monto3_protocol::service::{BrokerRequest, ServiceBrokerNegotiation,
                                ServiceErrors, ServiceExtension,
                                ServiceNegotiation, ServiceProduct};
 
@@ -157,59 +157,5 @@ impl Service {
                     })
                 }),
         )
-    }
-}
-
-error_chain! {
-    types {
-        ServiceConnectError, ServiceConnectErrorKind, ServiceConnectResultExt;
-    }
-    foreign_links {
-        Hyper(HyperError)
-            #[doc = "An error from the network."];
-        Serde(JsonError)
-            #[doc = "An invalid response was received."];
-        Uri(UriError)
-            #[doc = "An invalid URI was created from the config"];
-    }
-    errors {
-        /// A status other than Ok was received from the Broker, indicating
-        /// that the Client is not compatible.
-        BadStatus(code: StatusCode) {
-            description("The Broker is not compatible with this Client")
-            display("The Broker is not compatible with this Client: got {} from the Broker", code)
-        }
-
-        /// The Broker and Service are not compatible.
-        NotCompatible(broker: ProtocolVersion, service: ProtocolVersion) {
-            description("The Broker and Service are not compatible")
-            display("The Broker (Monto version {}) and Service (Monto version {}) are not compatible.", broker, service)
-        }
-    }
-}
-
-error_chain! {
-    types {
-        RequestError, RequestErrorKind, RequestResultExt;
-    }
-    foreign_links {
-        Hyper(HyperError)
-            #[doc = "An error from the network."];
-        Serde(JsonError)
-            #[doc = "An invalid response was received."];
-        Uri(UriError)
-            #[doc = "An invalid URI was created from the config"];
-    }
-    errors {
-        /// The given product is not exposed by the service.
-        NotExposed(desc: ProductDescriptor) {
-            description("The given product is not exposed by the service")
-            display("The product {} for language {} is not exposed by the service", desc.name, desc.language)
-        }
-        /// Errors sent from the service.
-        ServiceErrors(errors: ServiceErrors) {
-            description("Errors sent from the service")
-            display("Errors sent from the service: {:?}", errors.errors.iter().format(", "))
-        }
     }
 }

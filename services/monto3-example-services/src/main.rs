@@ -2,7 +2,7 @@ extern crate aho_corasick;
 extern crate either;
 #[macro_use]
 extern crate log;
-extern crate monto3_common;
+extern crate monto3_protocol;
 #[macro_use]
 extern crate monto3_service;
 extern crate pretty_logger;
@@ -15,8 +15,8 @@ mod find_todos;
 mod helpers;
 
 use either::{Left, Right};
-use monto3_common::messages::Language;
-use monto3_common::products::{HighlightingColor, HighlightingToken};
+use monto3_protocol::Language;
+use monto3_protocol::products::{HighlightingColor, HighlightingToken};
 use monto3_service::Service;
 use monto3_service::config::Config;
 use serde_json::{to_value, Value};

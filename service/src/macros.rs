@@ -32,12 +32,12 @@ macro_rules! simple_service_provider {
     ) => {
         pub struct $name;
         impl $crate::ServiceProvider for $name {
-            fn descriptor(&self) -> $crate::monto3_common::messages::ProductDescriptor {
+            fn descriptor(&self) -> $crate::monto3_protocol::ProductDescriptor {
                 let name = $product.parse().expect("Invalid product name from macro");
                 let language = $lang.to_owned().into();
-                $crate::monto3_common::messages::ProductDescriptor { name, language }
+                $crate::monto3_protocol::ProductDescriptor { name, language }
             }
-            fn service(&mut self, $path: &str, $input: ::std::vec::Vec<$crate::monto3_common::messages::Product>) -> (::std::result::Result<$crate::serde_json::Value, ::std::vec::Vec<$crate::messages::ServiceError>>, ::std::vec::Vec<$crate::messages::ServiceNotice>) $body
+            fn service(&mut self, $path: &str, $input: ::std::vec::Vec<$crate::monto3_protocol::Product>) -> (::std::result::Result<$crate::serde_json::Value, ::std::vec::Vec<$crate::monto3_protocol::service::ServiceError>>, ::std::vec::Vec<$crate::monto3_protocol::service::ServiceNotice>) $body
         }
     }
 }

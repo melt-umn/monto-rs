@@ -10,16 +10,16 @@ use futures::Future;
 use futures::future::{err, ok};
 use serde_json::Value;
 
-use monto3_client::messages::BrokerGetError;
-use monto3_common::messages::{Identifier, Product, ProductDescriptor,
-                              ProductIdentifier, ProductName};
-use monto3_service::messages::{ServiceError, ServiceErrors, ServiceNotice};
+use monto3_protocol::client::BrokerGetError;
+use monto3_protocol::{Identifier, Product, ProductDescriptor,
+                      ProductIdentifier, ProductName};
+use monto3_protocol::service::{ServiceError, ServiceErrors, ServiceNotice};
 
 use Broker;
 use client::Client;
 pub use resolve::cache::Cache;
 pub use resolve::watcher::{WatchEvent, Watcher};
-use service::{RequestError, RequestErrorKind};
+use service::{ServiceRequestError, ServiceRequestErrorKind};
 
 impl Client {
     /// Fully resolves a product request, including doing dependency resolution.
@@ -41,16 +41,16 @@ impl Client {
                 Box::new(service.request(pi.clone(), &ps).then(
                     move |r| match r {
                         Ok(sp) => Box::new(ok(sp.product)),
-                        Err(RequestError(e, _)) => {
+                        Err(ServiceRequestError(e, _)) => {
                             error!("{}", e);
                             match e {
-                                RequestErrorKind::Hyper(e) => Box::new(err(
+                                ServiceRequestErrorKind::Hyper(e) => Box::new(err(
                                     BrokerGetError::ServiceConnectError {
                                         service: si,
                                         error: e.to_string(),
                                     },
                                 )),
-                                RequestErrorKind::ServiceErrors(
+                                ServiceRequestErrorKind::ServiceErrors(
                                     ServiceErrors { errors, notices },
                                 ) => {
                                     for ServiceNotice::UnusedDependency(pi) in

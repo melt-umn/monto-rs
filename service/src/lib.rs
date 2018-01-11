@@ -13,6 +13,7 @@ extern crate futures;
 extern crate hyper;
 #[macro_use]
 extern crate log;
+extern crate monto3_common;
 extern crate rand;
 extern crate serde;
 #[macro_use]
@@ -21,7 +22,7 @@ extern crate tokio_core;
 extern crate toml;
 extern crate void;
 #[doc(hidden)]
-pub extern crate monto3_common;
+pub extern crate monto3_protocol;
 #[doc(hidden)]
 pub extern crate serde_json;
 
@@ -30,7 +31,6 @@ mod macros;
 
 pub mod config;
 pub mod helpers;
-pub mod messages;
 mod serve;
 
 use std::collections::BTreeMap;
@@ -38,10 +38,10 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 use tokio_core::reactor::Handle;
 
-use monto3_common::messages::{Product, ProductDescriptor, ProtocolVersion};
+use monto3_protocol::{Product, ProductDescriptor, ProtocolVersion};
+use monto3_protocol::service::{ServiceError, ServiceNegotiation, ServiceNotice};
 
 use config::Config;
-use messages::{ServiceError, ServiceNegotiation, ServiceNotice};
 pub use serve::ServeFuture;
 
 /// A Service and the associated HTTP server.

@@ -7,9 +7,8 @@ use std::path::{Path, PathBuf};
 
 use rand::random;
 
-use monto3_common::messages::{Identifier, SoftwareVersion};
-
-use messages::ServiceExtension;
+use monto3_protocol::{Identifier, SoftwareVersion};
+use monto3_protocol::service::ServiceExtension;
 
 error_chain! {
     errors {

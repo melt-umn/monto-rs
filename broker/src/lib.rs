@@ -7,6 +7,7 @@ extern crate either;
 #[macro_use]
 extern crate error_chain;
 extern crate futures;
+extern crate gotham;
 extern crate hyper;
 extern crate itertools;
 #[macro_use]
@@ -14,9 +15,8 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate mime;
-extern crate monto3_client;
 extern crate monto3_common;
-extern crate monto3_service;
+extern crate monto3_protocol;
 extern crate notify;
 extern crate serde;
 #[macro_use]
@@ -42,9 +42,9 @@ use futures::future::{err, join_all};
 use notify::Error as NotifyError;
 use tokio_core::reactor::Handle;
 
-use monto3_client::messages::ClientBrokerNegotiation;
-use monto3_common::messages::{Identifier, ProtocolVersion, SoftwareVersion};
-use monto3_service::messages::ServiceBrokerNegotiation;
+use monto3_protocol::client::ClientBrokerNegotiation;
+use monto3_protocol::{Identifier, ProtocolVersion, SoftwareVersion};
+use monto3_protocol::service::ServiceBrokerNegotiation;
 
 use config::Config;
 pub use errors::{Error, ErrorKind, Result, ResultExt};
@@ -75,6 +75,8 @@ impl Broker {
             Ok(watcher) => watcher,
             Err(e) => return Box::new(err(e.into())),
         };
+        unimplemented!()
+        /*
         let futures = config
             .service
             .clone()
@@ -94,6 +96,7 @@ impl Broker {
                 watcher,
             }
         }))
+        */
     }
 
     /// Returns the service with the given id, if one exists.

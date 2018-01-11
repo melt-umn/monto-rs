@@ -2,8 +2,8 @@ use futures::Future;
 use hyper::StatusCode;
 
 use monto3_common::json_response;
-use monto3_common::messages::{Identifier, ProductIdentifier};
-use monto3_client::messages::BrokerGetError;
+use monto3_protocol::{Identifier, ProductIdentifier};
+use monto3_protocol::client::BrokerGetError;
 
 use client::{BoxedFuture, Client};
 

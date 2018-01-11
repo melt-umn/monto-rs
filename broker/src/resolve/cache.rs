@@ -3,7 +3,7 @@ use std::collections::btree_map::Entry;
 
 use serde_json::Value;
 
-use monto3_common::messages::{Product, ProductIdentifier};
+use monto3_protocol::{Product, ProductIdentifier};
 
 /// A cache for products.
 #[derive(Debug)]

@@ -5,10 +5,13 @@
 use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::str::FromStr;
 
-use monto3_common::messages::{Identifier, NamespacedName, ProductIdentifier,
-                              ProtocolVersion, SoftwareVersion};
-use monto3_service::messages::ServiceNegotiation;
+use void::Void;
+
+use {Identifier, NamespacedName, ProductIdentifier, ProtocolExtension,
+     ProtocolVersion, SoftwareVersion};
+use service::ServiceNegotiation;
 
 /// The Message that a Client sends to a Broker during version negotiation.
 ///
@@ -50,12 +53,28 @@ pub struct ClientBrokerNegotiation {
 }
 
 /// An extension to the Client Protocol.
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd,
+         Serialize)]
 #[serde(rename_all = "snake_case", untagged)]
 pub enum ClientExtension {
     /// An unknown and unsupported extension.
     Unknown(NamespacedName),
 }
+
+impl Display for ClientExtension {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        unimplemented!()
+    }
+}
+
+impl FromStr for ClientExtension {
+    type Err = Void;
+    fn from_str(s: &str) -> Result<ClientExtension, Void> {
+        unimplemented!()
+    }
+}
+
+impl ProtocolExtension for ClientExtension {}
 
 /// An error that occurs during the sending of a product from a Client to the Broker.
 ///

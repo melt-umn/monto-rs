@@ -4,10 +4,8 @@ use std::fmt::Display;
 
 use serde_json::Value;
 
-use monto3_common::messages::{Language, Product, ProductIdentifier,
-                              ProductName};
-
-use messages::{ServiceError, ServiceNotice};
+use monto3_protocol::{Language, Product, ProductIdentifier, ProductName};
+use monto3_protocol::service::{ServiceError, ServiceNotice};
 
 /// Serves as the body of a ServiceProvider that only operates on the source of
 /// a single product.

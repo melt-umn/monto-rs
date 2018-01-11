@@ -1,9 +1,30 @@
-//! The Messages common to both the Client and Service Protocols, as described in
+//! Types useful for implementing the Monto protocols. This does **not**
+//! contain implementations of either the Client or Service protocol, merely
+//! the structures that make up the protocol.
+//!
+//! The crate root contains messages common to both the Client and Service
+//! Protocols, as described in
 //! [Section 3.1](https://melt-umn.github.io/monto-v3-draft/draft03/#3-1-common-messages)
 //! of the specification.
+#![warn(missing_docs)]
+
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
+extern crate semver;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+extern crate void;
+
+pub mod client;
+pub mod products;
+pub mod service;
 
 use std::cmp::Ordering;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use std::hash::Hash;
 use std::str::FromStr;
 
 use regex::Regex;
@@ -11,6 +32,7 @@ use semver::Version as SemverVersion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error as SerdeError, Visitor};
 use serde_json::Value;
+use void::Void;
 
 /// A reverse-hostname-style dotted identifier, which must have at least two components.
 ///
@@ -345,7 +367,7 @@ impl Display for ProductName {
             ProductName::Errors => write!(fmt, "errors"),
             ProductName::Highlighting => write!(fmt, "highlighting"),
             ProductName::Source => write!(fmt, "source"),
-            ProductName::Other(ref ident) => ident.fmt(fmt),
+            ProductName::Other(ref ident) => Display::fmt(ident, fmt),
         }
     }
 }
@@ -497,4 +519,23 @@ impl From<SoftwareVersion> for SemverVersion {
             pre: Vec::new(),
         }
     }
+}
+
+/// A trait for abstracting over Client Protocol and Service Protocol
+/// extensions. The `Display` and `FromStr` impls must print and parse the
+/// value as it would appear in the `Monto-Extension` header.
+pub trait ProtocolExtension
+    : 'static
+    + Clone
+    + Debug
+    + Display
+    + for<'de> Deserialize<'de>
+    + Eq
+    + FromStr<Err = Void>
+    + Hash
+    + PartialEq
+    + PartialOrd
+    + Send
+    + Serialize
+    + Sync {
 }

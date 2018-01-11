@@ -5,10 +5,10 @@ use hyper::client::FutureResponse;
 use serde_json;
 use url::{ParseError as UrlError, Url};
 
-use monto3_common::messages::ProtocolVersion;
+use monto3_protocol::ProtocolVersion;
 
 use {Client, HttpClient};
-use messages::{ClientBrokerNegotiation, ClientNegotiation};
+use monto3_protocol::client::{ClientBrokerNegotiation, ClientNegotiation};
 
 /// A Future for a Client negotiating version information and establishing a
 /// connection to the Broker.

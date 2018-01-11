@@ -2,9 +2,9 @@ use futures::future::ok;
 use hyper::{Response, StatusCode};
 use serde_json::Value;
 
-use monto3_client::messages::BrokerPutError;
 use monto3_common::json_response;
-use monto3_common::messages::{Language, Product, ProductName};
+use monto3_protocol::{Language, Product, ProductName};
+use monto3_protocol::client::BrokerPutError;
 
 use client::{BoxedFuture, Client};
 

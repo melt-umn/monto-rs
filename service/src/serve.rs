@@ -13,11 +13,11 @@ use tokio_core::reactor::Handle;
 use void::Void;
 
 use monto3_common::{error_response, json_request, json_response};
-use monto3_common::messages::{Product, ProductDescriptor};
+use monto3_protocol::{Product, ProductDescriptor};
+use monto3_protocol::service::{BrokerRequest, ServiceBrokerNegotiation,
+                               ServiceErrors, ServiceProduct};
 
 use Service;
-use messages::{BrokerRequest, ServiceBrokerNegotiation, ServiceErrors,
-               ServiceProduct};
 
 impl Service {
     /// Serves until the given future resolves.

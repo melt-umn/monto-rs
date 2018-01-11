@@ -1,7 +1,7 @@
 use hyper::StatusCode;
 
 use monto3_common::json_response;
-use monto3_client::messages::ClientNegotiation;
+use monto3_protocol::client::ClientNegotiation;
 
 use client::{BoxedFuture, Client};
 

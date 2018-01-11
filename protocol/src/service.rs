@@ -3,10 +3,13 @@
 //! of the specification.
 
 use std::collections::BTreeSet;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::str::FromStr;
 
-use monto3_common::messages::{NamespacedName, Product, ProductDescriptor,
-                              ProductIdentifier, ProtocolVersion,
-                              SoftwareVersion};
+use void::Void;
+
+use {NamespacedName, Product, ProductDescriptor, ProductIdentifier,
+     ProtocolExtension, ProtocolVersion, SoftwareVersion};
 
 /// The Message that a Broker sends to a Service during version negotiation.
 ///
@@ -48,12 +51,28 @@ pub struct ServiceNegotiation {
 }
 
 /// An extension to the Service Protocol.
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd,
+         Serialize)]
 #[serde(rename_all = "snake_case", untagged)]
 pub enum ServiceExtension {
     /// An unknown and unsupported extension.
     Unknown(NamespacedName),
 }
+
+impl Display for ServiceExtension {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        unimplemented!()
+    }
+}
+
+impl FromStr for ServiceExtension {
+    type Err = Void;
+    fn from_str(s: &str) -> Result<ServiceExtension, Void> {
+        unimplemented!()
+    }
+}
+
+impl ProtocolExtension for ServiceExtension {}
 
 /// The Message that a Service sends to a Broker during version negotiation.
 ///
