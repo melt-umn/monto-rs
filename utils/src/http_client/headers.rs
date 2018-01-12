@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::fmt::Result as FmtResult;
 
-use hyper::error::{Error as HyperError, Result as HyperResult};
+use hyper::error::Result as HyperResult;
 use hyper::header::{Formatter, Header, Raw};
 
 use monto3_protocol::{ProtocolExtension, ProtocolVersion};

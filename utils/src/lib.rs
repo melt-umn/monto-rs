@@ -1,6 +1,7 @@
 //! Utilities for implementing both the Client and Service Protocols.
 #![warn(missing_docs)]
 
+extern crate either;
 #[macro_use]
 extern crate error_chain;
 extern crate futures;
@@ -10,11 +11,6 @@ extern crate serde;
 extern crate serde_json;
 extern crate tokio_core;
 extern crate url;
+extern crate void;
 
-mod http_client;
-
-pub use hyper::Method;
-pub use url::Url;
-
-pub use http_client::{HttpClient, RequestError, RequestErrorKind,
-                      RequestFuture};
+pub mod http_client;

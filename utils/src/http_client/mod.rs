@@ -1,20 +1,27 @@
+//! An HTTP client designed for Monto.
+
+mod handler_set;
 mod headers;
+mod status_types;
 
 use std::collections::HashSet;
 use std::marker::PhantomData;
 
 use futures::{Async, Future};
-use hyper::{Body, Method, Request};
+use hyper::{Body, Request};
+pub use hyper::Method;
 use hyper::client::{Client as HyperClient, FutureResponse, HttpConnector};
 use hyper::error::Error as HyperError;
 use hyper::header::{Accept, ContentLength, ContentType};
 use serde::{Deserialize, Serialize};
 use tokio_core::reactor::Handle;
-use url::Url;
+pub use url::Url;
 
 use monto3_protocol::{ProtocolExtension, ProtocolVersion};
 
+pub use self::handler_set::{HandlerSet, StatusCode};
 use self::headers::{MontoExtension, MontoVersion};
+pub use self::status_types::*;
 
 /// A simple HTTP client for Monto.
 ///
