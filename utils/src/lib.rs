@@ -3,9 +3,6 @@
 //! Parts of this might later get factored out into a general-purpose "strongly
 //! typed API" library -- I'm really liking the concept of encoding a network
 //! protocol into the type system.
-//!
-//! TODO: Work around needing specialization.
-#![feature(specialization)]
 #![warn(missing_docs)]
 
 #[macro_use]
@@ -18,5 +15,5 @@ extern crate serde_json;
 extern crate tokio_core;
 extern crate url;
 
-mod haskellism;
+pub mod haskellism;
 pub mod http_client;

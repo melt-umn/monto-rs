@@ -1,13 +1,19 @@
-//! Thanks to Francis Gagné on Stack Overflow for help with creating this
-//! module: https://stackoverflow.com/questions/48220203#48221091
+//! A map between HTTP status codes and response types, for encoding the
+//! response space of an HTTP server.
 
+mod deserialize_body;
 pub mod status_types;
 
 use std::marker::PhantomData;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-use self::status_types::StatusCode;
+use haskellism::nat::{NSucc, NZero, Nat};
+pub use haskellism::response_map::deserialize_body::deserialize_body;
+use haskellism::response_map::status_types::StatusCode;
+
+/// A trait for response bodies.
+pub trait RespBody<S: StatusCode>: for<'de> Deserialize<'de> + Serialize {}
 
 /// An error when deserializing a response.
 pub enum RespError {
@@ -20,19 +26,7 @@ pub enum RespError {
 
 /// A trait for a type-level map between response codes and structures to
 /// deserialize response bodies to.
-///
-/// If this looks incredibly strange and unfamiliar, look at [the Haskell HList
-/// package](https://hackage.haskell.org/package/HList) or [Strongly Typed
-/// Heterogeneous Collections](http://okmij.org/ftp/Haskell/HList-ext.pdf).
-pub trait RespMap {
-    /// Attempts to deserialize the given JSON string into a body.
-    fn deserialize_body<S: StatusCode, T: for<'de> Deserialize<'de>>(
-        s: &str,
-    ) -> Result<T, RespError>;
-}
-
-/// A helper trait for `RespMap`.
-pub trait RespMapImpl<S, T> {
+pub trait RespMap<S: StatusCode, T: RespBody<S>, Idx: Nat> {
     /// Attempts to deserialize the given JSON string into a body.
     fn deserialize_body(s: &str) -> Result<T, RespError>;
 }
@@ -41,10 +35,8 @@ pub trait RespMapImpl<S, T> {
 /// `BadStatus` error.
 pub struct RespMapNil;
 
-impl RespMap for RespMapNil {
-    fn deserialize_body<S: StatusCode, T: for<'de> Deserialize<'de>>(
-        _: &str,
-    ) -> Result<T, RespError> {
+impl<S: StatusCode, T: RespBody<S>> RespMap<S, T, NZero> for RespMapNil {
+    fn deserialize_body(_: &str) -> Result<T, RespError> {
         Err(RespError::BadStatus(S::VALUE))
     }
 }
@@ -52,37 +44,25 @@ impl RespMap for RespMapNil {
 /// A status-handler pair placed in front of another `RespMap`.
 pub struct RespMapCons<S, T, Tl>(PhantomData<(S, T, Tl)>);
 
-impl<S, T, Tl> RespMap for RespMapCons<S, T, Tl>
+impl<S, T, Tl> RespMap<S, T, NZero> for RespMapCons<S, T, Tl>
 where
     S: StatusCode,
-    Tl: RespMap,
-{
-    fn deserialize_body<LS: StatusCode, LT: for<'de> Deserialize<'de>>(
-        s: &str,
-    ) -> Result<LT, RespError> {
-        <Self as RespMapImpl<LS, LT>>::deserialize_body(s)
-    }
-}
-
-default impl<S, T, Tl, LS, LT: for<'de> Deserialize<'de>> RespMapImpl<LS, LT>
-    for RespMapCons<S, T, Tl>
-where
-    S: StatusCode,
-    Tl: RespMap,
-    LS: StatusCode,
-{
-    fn deserialize_body(s: &str) -> Result<LT, RespError> {
-        Tl::deserialize_body::<LS, LT>(s)
-    }
-}
-
-impl<S, T: for<'de> Deserialize<'de>, Tl> RespMapImpl<S, T>
-    for RespMapCons<S, T, Tl>
-where
-    S: StatusCode,
-    Tl: RespMap,
+    T: RespBody<S>,
 {
     fn deserialize_body(s: &str) -> Result<T, RespError> {
+        ::serde_json::from_str(s).map_err(RespError::Json)
+    }
+}
+
+impl<S, T, Tl, TlS, TlT, N> RespMap<TlS, TlT, NSucc<N>>
+    for RespMapCons<S, T, Tl>
+where
+    Tl: RespMap<TlS, TlT, N>,
+    TlS: StatusCode,
+    TlT: RespBody<TlS>,
+    N: Nat,
+{
+    fn deserialize_body(s: &str) -> Result<TlT, RespError> {
         ::serde_json::from_str(s).map_err(RespError::Json)
     }
 }

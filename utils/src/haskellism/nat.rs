@@ -1,7 +1,10 @@
+//! Type-level natural numbers.
+
 use std::marker::PhantomData;
 
 /// A type-level natural number.
 pub trait Nat {
+    /// The value of the natural number at the value level.
     const VALUE: usize;
 }
 
@@ -18,3 +21,6 @@ pub struct NSucc<T: Nat>(PhantomData<T>);
 impl<T: Nat> Nat for NSucc<T> {
     const VALUE: usize = 1 + T::VALUE;
 }
+
+/// A trait for the length of a structure.
+pub trait Length<N: Nat> {}

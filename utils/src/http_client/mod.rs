@@ -17,11 +17,6 @@ pub use url::Url;
 
 use monto3_protocol::{ProtocolExtension, ProtocolVersion};
 
-pub use haskellism::aunion::{AUnion, AUnionCons, AUnionNil};
-pub use haskellism::response_map::{RespMap, RespMapCons, RespMapImpl,
-                                   RespMapNil};
-pub use haskellism::response_map::status_types::*;
-
 use self::headers::{MontoExtension, MontoVersion};
 
 /// A simple HTTP client for Monto.

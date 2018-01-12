@@ -1,3 +1,6 @@
+//! An anonymous union, extensible coproduct, or a co-HList. Not sure what the
+//! name is/should be.
+
 use haskellism::nat::{NSucc, NZero, Nat};
 
 /// A trait for anonymous unions.
@@ -16,6 +19,14 @@ pub trait AUnion<T, U, Idx: Nat> {
 /// `select` from an empty union!
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum AUnionNil {}
+
+impl AUnionNil {
+    /// Consumes this value; since there are no values of this type, it's
+    /// impossible to execute this function (without `unsafe`).
+    pub fn unreachable(self) -> ! {
+        match self {}
+    }
+}
 
 /// The cons case of an anonymous union.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
