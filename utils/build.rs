@@ -20,8 +20,6 @@ fn make_status_types(path: PathBuf) {
     ];
 
     let mut f = File::create(path).unwrap();
-    writeln!(f, "use http_client::handler_set::StatusCode;\n").unwrap();
-
     for &(code, hyper_name) in codes.iter() {
         writeln!(
             f,

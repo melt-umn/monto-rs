@@ -1,8 +1,6 @@
 //! An HTTP client designed for Monto.
 
-mod handler_set;
 mod headers;
-mod status_types;
 
 use std::collections::HashSet;
 use std::marker::PhantomData;
@@ -19,9 +17,12 @@ pub use url::Url;
 
 use monto3_protocol::{ProtocolExtension, ProtocolVersion};
 
-pub use self::handler_set::{HandlerSet, StatusCode};
+pub use haskellism::aunion::{AUnion, AUnionCons, AUnionNil};
+pub use haskellism::response_map::{RespMap, RespMapCons, RespMapImpl,
+                                   RespMapNil};
+pub use haskellism::response_map::status_types::*;
+
 use self::headers::{MontoExtension, MontoVersion};
-pub use self::status_types::*;
 
 /// A simple HTTP client for Monto.
 ///
