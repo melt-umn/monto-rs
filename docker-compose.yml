@@ -1,0 +1,10 @@
+version: '3'
+services:
+  broker:
+    build: broker
+    ports:
+     - "28888:28888"
+  cc:
+    build: misc/ableC-cpp-docker
+  loctrans:
+    build: misc/loctrans-docker

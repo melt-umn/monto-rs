@@ -155,7 +155,7 @@ impl<T: for<'de> Deserialize<'de>> Future for RequestFuture<T> {
             Some(RequestFutureInner::Normal(mut f)) => match f.poll() {
                 Ok(Async::Ready(out)) => {
                     // TODO
-                    unimplemented!()
+                    unimplemented!("{:?}", out)
                 },
                 Ok(Async::NotReady) => (Some(RequestFutureInner::Normal(f)), Ok(Async::NotReady)),
                 Err(err) => (None, Err(err.into())),
