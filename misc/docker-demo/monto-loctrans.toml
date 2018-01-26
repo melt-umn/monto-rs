@@ -1,0 +1,6 @@
+[net]
+addr = "0.0.0.0:10000"
+
+[version]
+id = "edu.umn.cs.melt.monto_loctrans"
+name = "monto-loctrans"

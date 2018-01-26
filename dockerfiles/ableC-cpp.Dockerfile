@@ -1,0 +1,16 @@
+FROM ubuntu
+RUN apt update
+RUN apt install -y build-essential curl libssl-dev pkg-config
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable -y
+ENV PATH=/root/.cargo/bin:$PATH
+RUN mkdir /code
+COPY . /code
+WORKDIR /code
+RUN cargo build --all
+
+FROM openjdk
+WORKDIR /root/
+# N.B. Debug mode
+COPY --from=0 /code/target/debug/monto3-cpp .
+COPY --from=0 /code/misc/docker-demo/monto-cpp.toml .
+CMD ["./monto3-cpp"]

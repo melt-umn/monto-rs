@@ -1,0 +1,8 @@
+[net]
+addr = "0.0.0.0:28888"
+
+[[service]]
+addr = "cc:10000"
+
+[[service]]
+addr = "loctrans:10000"
