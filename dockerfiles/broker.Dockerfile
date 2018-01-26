@@ -8,12 +8,9 @@ ENV PATH=/root/.cargo/bin:$PATH
 RUN cargo install just
 
 RUN mkdir /code
-WORKDIR /code
-COPY . .
-
-RUN just build
+COPY . /code
+WORKDIR /code/broker
 RUN cargo install
 
-RUN mkdir -p /var/log/supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-CMD ["/usr/bin/supervisord"]
+WORKDIR /code/misc/docker-demo
+CMD ["/root/.cargo/bin/monto3-broker"]

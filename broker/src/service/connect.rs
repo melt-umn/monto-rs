@@ -23,13 +23,13 @@ use config::{Config, ServiceConfig};
 use service::Service;
 
 /// A future for connecting to a `Service`.
-pub struct ServiceConnectFuture<'handle> {
+pub struct ServiceConnectFuture {
     config: Config,
     service_config: ServiceConfig,
-    handle: &'handle Handle,
+    handle: Handle,
 }
 
-impl<'handle> Future for ServiceConnectFuture<'handle> {
+impl Future for ServiceConnectFuture {
     type Item = Service;
     type Error = ServiceConnectError;
     fn poll(&mut self) -> Result<Async<Service>, ServiceConnectError> {

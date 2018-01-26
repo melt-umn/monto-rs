@@ -41,7 +41,7 @@ impl Service {
     pub fn connect(
         config: Config,
         service_config: ServiceConfig,
-        handle: &Handle,
+        handle: Handle,
     ) -> ServiceConnectFuture {
         unimplemented!()
     }

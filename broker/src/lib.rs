@@ -75,14 +75,12 @@ impl Broker {
             Ok(watcher) => watcher,
             Err(e) => return Box::new(err(e.into())),
         };
-        unimplemented!()
-        /*
         let futures = config
             .service
             .clone()
             .into_iter()
             .map(|s| {
-                Service::connect(config.clone(), s, &handle)
+                Service::connect(config.clone(), s, handle.clone())
                     .map_err(Error::from)
             })
             .collect::<Vec<_>>();
@@ -96,7 +94,6 @@ impl Broker {
                 watcher,
             }
         }))
-        */
     }
 
     /// Returns the service with the given id, if one exists.

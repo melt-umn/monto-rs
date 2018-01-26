@@ -1,0 +1,10 @@
+**/.*
+
+**/*.bin
+**/*.rs.bk
+**/target
+
+/Cargo.lock
+/Dockerfile
+/misc/report
+/staging

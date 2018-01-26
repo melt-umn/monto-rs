@@ -1,10 +1,16 @@
 version: '3'
 services:
   broker:
-    build: broker
+    build:
+      context: .
+      dockerfile: dockerfiles/broker.Dockerfile
     ports:
      - "28888:28888"
   cc:
-    build: misc/ableC-cpp-docker
+    build:
+      context: .
+      dockerfile: dockerfiles/ableC-cpp.Dockerfile
   loctrans:
-    build: misc/loctrans-docker
+    build:
+      context: .
+      dockerfile: dockerfiles/loctrans.Dockerfile

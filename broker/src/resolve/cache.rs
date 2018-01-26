@@ -23,7 +23,9 @@ pub struct Cache {
 impl Cache {
     /// Creates a new `Cache`.
     pub fn new() -> Cache {
-        unimplemented!()
+        Cache {
+            products: BTreeMap::new(),
+        }
     }
 
     /// Inserts a new product into the cache, replacing any copies of the old
@@ -44,10 +46,9 @@ impl Cache {
             .collect();
         match self.products.entry(identifier) {
             Entry::Vacant(entry) => {
-                entry.insert((
-                    Version::default(),
-                    Some((product.value, dependencies)),
-                ));
+                entry.insert(
+                    (Version::default(), Some((product.value, dependencies))),
+                );
             }
             Entry::Occupied(entry) => {
                 let entry = entry.into_mut();
