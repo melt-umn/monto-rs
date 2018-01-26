@@ -3,6 +3,7 @@ extern crate either;
 extern crate futures;
 #[macro_use]
 extern crate log;
+extern crate monto3_common;
 #[macro_use]
 extern crate monto3_service;
 extern crate pretty_logger;
@@ -10,11 +11,14 @@ extern crate serde_json;
 extern crate tokio_core;
 extern crate void;
 
+use std::io::Write;
 use std::process::Command;
 
 use either::{Left, Right};
+use monto3_common::messages::Language;
 use monto3_service::Service;
 use monto3_service::config::Config;
+use monto3_service::helpers::simple_fn;
 use monto3_service::messages::ServiceError;
 use serde_json::Value;
 use tokio_core::reactor::Core;
@@ -44,25 +48,27 @@ simple_service_provider! {
     name = Cpp;
     product = "edu.umn.cs.melt.preprocessed_source";
     language = "c";
-    (p, _ps) => {
-        let r = Command::new("cpp")
-            .arg("-D_POSIX_C_SOURCE")
-            .arg(p)
-            .output();
-        let r = match r {
-            Ok(o) => if o.status.success() {
+    (p, ps) => {
+        simple_fn(p, ps, Language::C, |src| {
+            let file = format!("-dFILE={}", p);
+            let mut cpp = Command::new("cpp")
+                .arg("-D_POSIX_C_SOURCE")
+                .arg(file)
+                .spawn()
+                .map_err(|x| x.to_string())?;
+            cpp.stdin.as_mut().unwrap().write_all(src.as_bytes())
+                .map_err(|x| x.to_string())?;
+            let o = cpp.wait_with_output()
+                .map_err(|x| x.to_string())?;
+            if o.status.success() {
                 Ok(Value::String(btos(&o.stdout)))
             } else {
-                Err(vec![
+                Err(format!("{:#?}", vec![
                     ServiceError::Other(format!("Exited with {:?}", o.status.code())),
                     ServiceError::Other(btos(&o.stdout)),
                     ServiceError::Other(btos(&o.stderr)),
-                ])
-            },
-            Err(e) => Err(vec![
-                ServiceError::Other(e.to_string())
-            ]),
-        };
-        (r, Vec::new())
+                ]))
+            }
+        })
     }
 }

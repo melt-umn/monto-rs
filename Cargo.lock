@@ -464,6 +464,7 @@ dependencies = [
  "either 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "monto3-common 0.1.0",
  "monto3-service 0.1.0",
  "pretty_logger 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",

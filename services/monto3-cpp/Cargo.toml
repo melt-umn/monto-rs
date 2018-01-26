@@ -12,5 +12,8 @@ serde_json = "1.0.4"
 tokio-core = "0.1.10"
 void = "1.0.2"
 
+[dependencies.monto3-common]
+path = "../../common"
+
 [dependencies.monto3-service]
 path = "../../service"
