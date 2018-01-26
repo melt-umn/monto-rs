@@ -3,14 +3,14 @@ services:
   broker:
     build:
       context: .
-      dockerfile: dockerfiles/broker.Dockerfile
+      dockerfile: docker/broker.Dockerfile
     ports:
      - "28888:28888"
   cc:
     build:
       context: .
-      dockerfile: dockerfiles/ableC-cpp.Dockerfile
+      dockerfile: docker/ableC-cpp.Dockerfile
   loctrans:
     build:
       context: .
-      dockerfile: dockerfiles/loctrans.Dockerfile
+      dockerfile: docker/loctrans.Dockerfile

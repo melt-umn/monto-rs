@@ -5,4 +5,7 @@ addr = "0.0.0.0:28888"
 addr = "cc:10000"
 
 [[service]]
+addr = "cc:10001"
+
+[[service]]
 addr = "loctrans:10000"

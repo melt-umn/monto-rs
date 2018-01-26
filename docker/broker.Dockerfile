@@ -11,6 +11,6 @@ RUN cargo build --all
 FROM ubuntu
 WORKDIR /root/
 # N.B. Debug mode
-COPY --from=0 /code/target/debug/monto3-loctrans .
-COPY --from=0 /code/misc/docker-demo/monto-loctrans.toml .
-CMD ["./monto3-loctrans"]
+COPY --from=0 /code/target/debug/monto3-broker .
+COPY misc/docker-demo/monto-broker.toml .
+CMD ["./monto3-broker"]

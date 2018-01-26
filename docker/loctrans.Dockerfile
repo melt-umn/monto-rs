@@ -8,9 +8,9 @@ COPY . /code
 WORKDIR /code
 RUN cargo build --all
 
-FROM openjdk
+FROM ubuntu
 WORKDIR /root/
 # N.B. Debug mode
-COPY --from=0 /code/target/debug/monto3-cpp .
-COPY --from=0 /code/misc/docker-demo/monto-cpp.toml .
-CMD ["./monto3-cpp"]
+COPY --from=0 /code/target/debug/monto3-loctrans .
+COPY misc/docker-demo/monto-loctrans.toml .
+CMD ["./monto3-loctrans"]

@@ -7,13 +7,19 @@ extern crate pretty_logger;
 extern crate tokio_core;
 extern crate void;
 
+use std::thread::sleep;
+use std::time::Duration;
+
 use tokio_core::reactor::Core;
-use void::{ResultVoidExt, unreachable};
+use void::{unreachable, ResultVoidExt};
 
 use monto3_broker::Broker;
 use monto3_broker::config::Config;
 
 fn main() {
+    // TODO: This is a hack.
+    sleep(Duration::from_secs(10));
+
     // Start logging.
     pretty_logger::init_to_defaults().unwrap();
 
@@ -26,9 +32,8 @@ fn main() {
 
     // Create the Broker and connect to services.
     let handle = core.handle();
-    let broker = core.run(Broker::new(config, handle)).expect(
-        "Couldn't initialize Broker",
-    );
+    let broker = core.run(Broker::new(config, handle))
+        .expect("Couldn't initialize Broker");
 
     // Run the Broker, listening for clients.
     let r = core.run(broker.serve_forever());
