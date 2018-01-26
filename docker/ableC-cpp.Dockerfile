@@ -10,7 +10,9 @@ WORKDIR /code
 RUN cargo build --all
 
 FROM openjdk
-RUN apt update && apt install -y ant supervisor && rm -rf /var/lib/apt/lists/*
+RUN apt update && \
+	apt install -y ant build-essential supervisor && \
+	rm -rf /var/lib/apt/lists/*
 WORKDIR /root/
 RUN git clone https://github.com/melt-umn/silver.git
 RUN git clone https://github.com/melt-umn/ableC.git
@@ -42,4 +44,5 @@ RUN	silver -o ableC-monto.jar \
 COPY --from=0 /code/target/debug/monto3-cpp .
 COPY misc/docker-demo/ableC-cpp.supervisord.conf supervisord.conf
 COPY misc/docker-demo/monto-cpp.toml .
+ENV RUST_BACKTRACE=1
 CMD ["supervisord", "-c", "./supervisord.conf"]

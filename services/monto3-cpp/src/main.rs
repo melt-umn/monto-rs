@@ -12,7 +12,7 @@ extern crate tokio_core;
 extern crate void;
 
 use std::io::Write;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use either::{Left, Right};
 use monto3_common::messages::Language;
@@ -50,16 +50,15 @@ simple_service_provider! {
     language = "c";
     (p, ps) => {
         simple_fn(p, ps, Language::C, |src| {
-            let file = format!("-dFILE={}", p);
             let mut cpp = Command::new("cpp")
                 .arg("-D_POSIX_C_SOURCE")
-                .arg(file)
+                .stdin(Stdio::piped())
                 .spawn()
-                .map_err(|x| x.to_string())?;
+                .map_err(|x| format!("Couldn't open cpp: {}", x))?;
             cpp.stdin.as_mut().unwrap().write_all(src.as_bytes())
-                .map_err(|x| x.to_string())?;
+                .map_err(|x| format!("Couldn't write to cpp: {}", x))?;
             let o = cpp.wait_with_output()
-                .map_err(|x| x.to_string())?;
+                .map_err(|x| format!("cpp died: {}", x))?;
             if o.status.success() {
                 Ok(Value::String(btos(&o.stdout)))
             } else {
