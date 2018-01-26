@@ -22,6 +22,7 @@ RUN git clone https://github.com/melt-umn/ableC-cilk.git
 RUN git clone https://github.com/melt-umn/ableC-regex-lib.git
 RUN git clone https://github.com/melt-umn/ableC-regex-pattern-matching.git
 WORKDIR /root/silver
+RUN git checkout feature/better_errors
 RUN ./update
 WORKDIR /root/silver/support/bin
 RUN mkdir ~/bin
