@@ -2,7 +2,6 @@ use std::error::Error;
 
 use monto3_common::messages::Language;
 use monto3_common::products::{HighlightingColor, HighlightingToken};
-use monto3_service::messages::ServiceError;
 use serde_json::{from_value, to_value};
 
 use pos_to_byte;
@@ -45,10 +44,11 @@ struct MeltToken {
 
 impl MeltToken {
     fn convert(self, src: &str) -> Result<HighlightingToken, Box<Error>> {
-        let (s, e) = pos_to_byte(src, (self.start_line, self.start_col), (
-            self.end_line,
-            self.end_col,
-        ))?;
+        let (s, e) = pos_to_byte(
+            src,
+            (self.start_line, self.start_col),
+            (self.end_line, self.end_col),
+        )?;
         Ok(HighlightingToken {
             color: self.color,
             start_byte: s,
