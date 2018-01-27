@@ -14,7 +14,7 @@ RUN apt update && \
 	apt install -y ant build-essential supervisor && \
 	rm -rf /var/lib/apt/lists/*
 WORKDIR /root/
-RUN git clone https://github.com/melt-umn/silver.git
+RUN git clone https://github.com/melt-umn/silver.git -b feature/better-errors
 RUN git clone https://github.com/melt-umn/ableC.git
 RUN git clone https://github.com/melt-umn/ableC-monto.git
 RUN mkdir extensions
@@ -24,7 +24,6 @@ RUN git clone https://github.com/melt-umn/ableC-cilk.git
 RUN git clone https://github.com/melt-umn/ableC-regex-lib.git
 RUN git clone https://github.com/melt-umn/ableC-regex-pattern-matching.git
 WORKDIR /root/silver
-RUN git checkout feature/better-errors
 RUN ./update
 WORKDIR /root/silver/support/bin
 RUN mkdir ~/bin
