@@ -68,11 +68,17 @@ fn pos_to_byte(
 
 fn one_pos_to_byte(buf: &str, mut line: usize, mut col: usize) -> Result<usize, Box<Error>> {
     let mut n = 0;
+    if line == 0 {
+        return Err("Line must not be 0".into());
+    }
+    line -= 1;
     for c in buf.chars() {
         n += 1;
         if line == 0 {
             if col == 0 {
                 return Ok(n);
+            } else if c == '\n' {
+                return Err("No such position (col)".into())
             } else {
                 col -= 1;
             }
@@ -80,5 +86,9 @@ fn one_pos_to_byte(buf: &str, mut line: usize, mut col: usize) -> Result<usize, 
             line -= 1;
         }
     }
-    Err("No such position".into())
+    if line == 0 && col == 0 {
+        Ok(n)
+    } else {
+        Err("No such position".into())
+    }
 }

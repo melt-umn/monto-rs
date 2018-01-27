@@ -53,6 +53,7 @@ simple_service_provider! {
             let mut cpp = Command::new("cpp")
                 .arg("-D_POSIX_C_SOURCE")
                 .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
                 .spawn()
                 .map_err(|x| format!("Couldn't open cpp: {}", x))?;
             cpp.stdin.as_mut().unwrap().write_all(src.as_bytes())
