@@ -19,10 +19,9 @@ mod errors;
 mod highlighting;
 #[cfg(test)]
 mod tests;
+mod util;
 
 use std::error::Error;
-use std::fs::File;
-use std::io::Read;
 
 use either::{Left, Right};
 use monto3_service::Service;
@@ -51,16 +50,10 @@ fn main() {
 }
 
 fn pos_to_byte(
-    path: &str,
+    buf: &str,
     start: (usize, usize),
     end: (usize, usize),
 ) -> Result<(usize, usize), Box<Error>> {
-    let buf = {
-        let mut f = File::open(path)?;
-        let mut buf = String::new();
-        f.read_to_string(&mut buf)?;
-        buf
-    };
     let s = one_pos_to_byte(&buf, start.0, start.1)?;
     let e = one_pos_to_byte(&buf, end.0, end.1)?;
     Ok((s, e))

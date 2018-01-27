@@ -13,6 +13,7 @@ simple_service_provider! {
     product = "errors";
     language = "c";
     (p, ps) => {
+        unimplemented!();
         one_to_one_fn(p, ps, "edu.umn.cs.melt.ablec.errors".parse().unwrap(), Language::C, |errs| {
             match from_value(errs) {
                 Ok(errs) => {
