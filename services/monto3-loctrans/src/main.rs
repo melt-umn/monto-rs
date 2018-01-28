@@ -66,7 +66,6 @@ fn one_pos_to_byte(buf: &str, mut line: usize, mut col: usize) -> Result<usize, 
     }
     line -= 1;
     for c in buf.chars() {
-        n += 1;
         if line == 0 {
             if col == 0 {
                 return Ok(n);
@@ -78,6 +77,7 @@ fn one_pos_to_byte(buf: &str, mut line: usize, mut col: usize) -> Result<usize, 
         } else if c == '\n' {
             line -= 1;
         }
+        n += 1;
     }
     if line == 0 && col == 0 {
         Ok(n)
